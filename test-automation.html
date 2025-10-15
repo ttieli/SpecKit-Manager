@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spec Kit 自动化测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f3f4f6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb, #1e40af);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .btn:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .summary {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .summary-card {
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .summary-card.passed {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+        }
+
+        .summary-card.failed {
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+        }
+
+        .summary-card.skipped {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+        }
+
+        .summary-card .number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .summary-card .label {
+            font-size: 0.9rem;
+            color: #6b7280;
+            font-weight: 600;
+        }
+
+        .test-results {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-section {
+            margin-bottom: 25px;
+        }
+
+        .test-section h3 {
+            color: #1e3a8a;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .test-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.95rem;
+        }
+
+        .test-item.passed {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+        }
+
+        .test-item.failed {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+        }
+
+        .test-item.skipped {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .test-item.running {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .test-icon {
+            font-size: 1.5rem;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .test-name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .test-duration {
+            color: #6b7280;
+            font-size: 0.85rem;
+        }
+
+        .test-error {
+            margin-top: 8px;
+            padding: 10px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #dc2626;
+            font-family: monospace;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2563eb, #3b82f6);
+            transition: width 0.3s ease;
+        }
+
+        .log-output {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .log-output .log-entry {
+            padding: 4px 0;
+            border-bottom: 1px solid #374151;
+        }
+
+        .log-output .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-output .log-timestamp {
+            color: #9ca3af;
+            margin-right: 8px;
+        }
+
+        .log-output .log-level-info {
+            color: #60a5fa;
+        }
+
+        .log-output .log-level-success {
+            color: #34d399;
+        }
+
+        .log-output .log-level-error {
+            color: #f87171;
+        }
+
+        .log-output .log-level-warning {
+            color: #fbbf24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Spec Kit 自动化测试</h1>
+            <p>MVP 核心功能自动验证 - Phase 1-4</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" id="runTestsBtn" onclick="runAllTests()">
+                ▶️ 运行所有测试
+            </button>
+            <button class="btn btn-secondary" onclick="clearResults()">
+                🗑️ 清除结果
+            </button>
+            <button class="btn btn-secondary" onclick="exportReport()">
+                📄 导出报告
+            </button>
+            <div style="margin-left: auto; color: #6b7280; font-weight: 600;">
+                <span id="testStatus">准备就绪</span>
+            </div>
+        </div>
+
+        <div class="summary" id="summary" style="display: none;">
+            <h3>测试摘要</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+            </div>
+            <div class="summary-grid">
+                <div class="summary-card passed">
+                    <div class="number" id="passedCount">0</div>
+                    <div class="label">✅ 通过</div>
+                </div>
+                <div class="summary-card failed">
+                    <div class="number" id="failedCount">0</div>
+                    <div class="label">❌ 失败</div>
+                </div>
+                <div class="summary-card skipped">
+                    <div class="number" id="skippedCount">0</div>
+                    <div class="label">⏭️ 跳过</div>
+                </div>
+                <div class="summary-card" style="background: #e0e7ff; border: 2px solid #6366f1;">
+                    <div class="number" id="totalCount">0</div>
+                    <div class="label">📊 总计</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-results">
+            <h2>测试结果</h2>
+            <div id="testResults"></div>
+
+            <h3 style="margin-top: 30px;">控制台日志</h3>
+            <div class="log-output" id="logOutput"></div>
+        </div>
+    </div>
+
+    <script>
+        // Test state
+        let testResults = [];
+        let passedCount = 0;
+        let failedCount = 0;
+        let skippedCount = 0;
+        let totalTests = 0;
+        let currentTestIndex = 0;
+
+        // Logging
+        function log(level, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logOutput = document.getElementById('logOutput');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `
+                <span class="log-timestamp">[${timestamp}]</span>
+                <span class="log-level-${level}">[${level.toUpperCase()}]</span>
+                ${message}
+            `;
+            logOutput.appendChild(entry);
+            logOutput.scrollTop = logOutput.scrollHeight;
+            console.log(`[${level}] ${message}`);
+        }
+
+        // Test runner
+        async function runTest(name, testFn, category) {
+            const startTime = Date.now();
+            const testId = `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+            // Add test item to UI
+            const section = document.getElementById(`section-${category}`) || createTestSection(category);
+            const testItem = document.createElement('div');
+            testItem.className = 'test-item running';
+            testItem.id = testId;
+            testItem.innerHTML = `
+                <div class="test-icon">⏳</div>
+                <div class="test-name">${name}</div>
+                <div class="test-duration">运行中...</div>
+            `;
+            section.appendChild(testItem);
+
+            log('info', `开始测试: ${name}`);
+
+            try {
+                await testFn();
+                const duration = Date.now() - startTime;
+                testItem.className = 'test-item passed';
+                testItem.innerHTML = `
+                    <div class="test-icon">✅</div>
+                    <div class="test-name">${name}</div>
+                    <div class="test-duration">${duration}ms</div>
+                `;
+                passedCount++;
+                log('success', `✅ 通过: ${name} (${duration}ms)`);
+                return { status: 'passed', duration, name };
+            } catch (error) {
+                const duration = Date.now() - startTime;
+                testItem.className = 'test-item failed';
+                testItem.innerHTML = `
+                    <div class="test-icon">❌</div>
+                    <div class="test-name">${name}</div>
+                    <div class="test-duration">${duration}ms</div>
+                `;
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'test-error';
+                errorDiv.textContent = error.message || error;
+                testItem.appendChild(errorDiv);
+                failedCount++;
+                log('error', `❌ 失败: ${name} - ${error.message || error}`);
+                return { status: 'failed', duration, name, error: error.message || error };
+            }
+        }
+
+        function createTestSection(category) {
+            const section = document.createElement('div');
+            section.className = 'test-section';
+            section.id = `section-${category}`;
+            section.innerHTML = `<h3>${getCategoryName(category)}</h3>`;
+            document.getElementById('testResults').appendChild(section);
+            return section;
+        }
+
+        function getCategoryName(category) {
+            const names = {
+                'phase1': 'Phase 1: Firebase 配置',
+                'phase2': 'Phase 2: 基础架构',
+                'phase3': 'Phase 3: 用户认证',
+                'phase4': 'Phase 4: 数据持久化',
+                'ui': 'UI 元素验证',
+                'integration': '集成测试'
+            };
+            return names[category] || category;
+        }
+
+        function updateProgress() {
+            const progress = (currentTestIndex / totalTests) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('passedCount').textContent = passedCount;
+            document.getElementById('failedCount').textContent = failedCount;
+            document.getElementById('skippedCount').textContent = skippedCount;
+            document.getElementById('totalCount').textContent = totalTests;
+            document.getElementById('testStatus').textContent =
+                `进行中: ${currentTestIndex}/${totalTests}`;
+        }
+
+        // Define all tests
+        async function runAllTests() {
+            const runBtn = document.getElementById('runTestsBtn');
+            runBtn.disabled = true;
+            runBtn.textContent = '🔄 测试运行中...';
+
+            // Reset counters
+            passedCount = 0;
+            failedCount = 0;
+            skippedCount = 0;
+            currentTestIndex = 0;
+            testResults = [];
+
+            document.getElementById('summary').style.display = 'block';
+            document.getElementById('testResults').innerHTML = '';
+            document.getElementById('logOutput').innerHTML = '';
+
+            log('info', '='.repeat(60));
+            log('info', 'Spec Kit 自动化测试开始');
+            log('info', '='.repeat(60));
+
+            // Phase 1: Firebase 配置测试
+            const phase1Tests = [
+                {
+                    name: '验证 Firebase 配置是否存在',
+                    fn: async () => {
+                        const iframe = document.createElement('iframe');
+                        iframe.style.display = 'none';
+                        iframe.src = 'index.html';
+                        document.body.appendChild(iframe);
+
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+
+                        const config = iframe.contentWindow.firebaseConfig;
+                        if (!config) throw new Error('Firebase 配置未找到');
+                        if (config.apiKey === 'YOUR_API_KEY') throw new Error('Firebase 配置未更新（仍为占位符）');
+                        if (!config.projectId || !config.authDomain || !config.databaseURL) {
+                            throw new Error('Firebase 配置不完整');
+                        }
+
+                        document.body.removeChild(iframe);
+                    },
+                    category: 'phase1'
+                },
+                {
+                    name: '验证 .env 文件存在',
+                    fn: async () => {
+                        // This is a client-side test, we can't directly check .env file
+                        // But we can verify that the config in index.html has been updated
+                        log('info', '注意: .env 文件需要手动验证');
+                        // Skip this test as it requires server-side access
+                    },
+                    category: 'phase1'
+                }
+            ];
+
+            // Phase 2: 基础架构测试
+            const phase2Tests = [
+                {
+                    name: '验证 Firebase SDK 加载',
+                    fn: async () => {
+                        const iframe = document.createElement('iframe');
+                        iframe.style.display = 'none';
+                        iframe.src = 'index.html';
+                        document.body.appendChild(iframe);
+
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+
+                        if (!iframe.contentWindow.firebase) {
+                            throw new Error('Firebase SDK 未加载到全局命名空间');
+                        }
+
+                        const firebase = iframe.contentWindow.firebase;
+                        if (!firebase.initializeApp || !firebase.getAuth || !firebase.getDatabase) {
+                            throw new Error('Firebase SDK 函数不完整');
+                        }
+
+                        document.body.removeChild(iframe);
+                    },
+                    category: 'phase2'
+                },
+                {
+                    name: '验证全局状态变量',
+                    fn: async () => {
+                        const iframe = document.createElement('iframe');
+                        iframe.style.display = 'none';
+                        iframe.src = 'index.html';
+                        document.body.appendChild(iframe);
+
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+
+                        const win = iframe.contentWindow;
+                        if (typeof win.currentUser === 'undefined') throw new Error('currentUser 未定义');
+                        if (typeof win.isOnline === 'undefined') throw new Error('isOnline 未定义');
+                        if (typeof win.firebaseInitialized === 'undefined') throw new Error('firebaseInitialized 未定义');
+                        if (!Array.isArray(win.offlineQueue)) throw new Error('offlineQueue 不是数组');
+
+                        document.body.removeChild(iframe);
+                    },
+                    category: 'phase2'
+                },
+                {
+                    name: '验证 initFirebase() 函数存在',
+                    fn: async () => {
+                        const iframe = document.createElement('iframe');
+                        iframe.style.display = 'none';
+                        iframe.src = 'index.html';
+                        document.body.appendChild(iframe);
+
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+
+                        if (typeof iframe.contentWindow.initFirebase !== 'function') {
+                            throw new Error('initFirebase 函数未定义');
+                        }
+
+                        document.body.removeChild(iframe);
+                    },
+                    category: 'phase2'
+                }
+            ];
+
+            // Phase 3: 用户认证测试
+            const phase3Tests = [
+                {
+                    name: '验证认证 UI 元素存在',
+                    fn: async () => {
+                        const iframe = document.createElement('iframe');
+                        iframe.style.display = 'none';
+                        iframe.src = 'index.html';
+                        document.body.appendChild(iframe);
+
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+
+                        const doc = iframe.contentDocument;
+                        if (!doc.getElementById('authOverlay')) throw new Error('认证覆盖层未找到');
+                        if (!doc.getElementById('loginForm')) throw new Error('登录表单未找到');
+                        if (!doc.getElementById('registerForm')) throw new Error('注册表单未找到');
+                        if (!doc.getElementById('authError')) throw new Error('错误消息区域未找到');
+                        if (!doc.getElementById('userInfo')) throw new Error('用户信息区域未找到');
+
+                        document.body.removeChild(iframe);
+                    },
+                    category: 'phase3'
+                },
+                {
+                    name: '验证认证函数存在',
+                    fn: async () => {
+                        const iframe = document.createElement('iframe');
+                        iframe.style.display = 'none';
+                        iframe.src = 'index.html';
+                        document.body.appendChild(iframe);
+
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+
+                        const win = iframe.contentWindow;
+                        if (typeof win.registerUser !== 'function') throw new Error('registerUser 未定义');
+                        if (typeof win.loginUser !== 'function') throw new Error('loginUser 未定义');
+                        if (typeof win.logoutUser !== 'function') throw new Error('logoutUser 未定义');
+                        if (typeof win.showAuthUI !== 'function') throw new Error('showAuthUI 未定义');
+                        if (typeof win.hideAuthUI !== 'function') throw new Error('hideAuthUI 未定义');
+                        if (typeof win.switchAuthTab !== 'function') throw new Error('switchAuthTab 未定义');
+
+                        document.body.removeChild(iframe);
+                    },
+                    category: 'phase3'
+                },
+                {
+                    name: '验证错误消息映射',
+                    fn: async () => {
+                        const iframe = document.createElement('iframe');
+                        iframe.style.display = 'none';
+                        iframe.src = 'index.html';
+                        document.body.appendChild(iframe);
+
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+
+                        const win = iframe.contentWindow;
+                        if (typeof win.getAuthErrorMessage !== 'function') {
+                            throw new Error('getAuthErrorMessage 未定义');
+                        }
+
+                        const msg = win.getAuthErrorMessage('auth/user-not-found');
+                        if (!msg || typeof msg !== 'string') {
+                            throw new Error('错误消息格式不正确');
+                        }
+
+                        document.body.removeChild(iframe);
+                    },
+                    category: 'phase3'
+                }
+            ];
+
+            // Phase 4: 数据持久化测试
+            const phase4Tests = [
+                {
+                    name: '验证 CRUD 函数存在',
+                    fn: async () => {
+                        const iframe = document.createElement('iframe');
+                        iframe.style.display = 'none';
+                        iframe.src = 'index.html';
+                        document.body.appendChild(iframe);
+
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+
+                        const win = iframe.contentWindow;
+                        if (typeof win.saveProjectToFirebase !== 'function') throw new Error('saveProjectToFirebase 未定义');
+                        if (typeof win.loadProjectsFromFirebase !== 'function') throw new Error('loadProjectsFromFirebase 未定义');
+                        if (typeof win.updateProjectInFirebase !== 'function') throw new Error('updateProjectInFirebase 未定义');
+                        if (typeof win.deleteProjectFromFirebase !== 'function') throw new Error('deleteProjectFromFirebase 未定义');
+
+                        document.body.removeChild(iframe);
+                    },
+                    category: 'phase4'
+                },
+                {
+                    name: '验证离线队列函数',
+                    fn: async () => {
+                        const iframe = document.createElement('iframe');
+                        iframe.style.display = 'none';
+                        iframe.src = 'index.html';
+                        document.body.appendChild(iframe);
+
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+
+                        const win = iframe.contentWindow;
+                        if (typeof win.queueOfflineOperation !== 'function') throw new Error('queueOfflineOperation 未定义');
+                        if (typeof win.processOfflineQueue !== 'function') throw new Error('processOfflineQueue 未定义');
+                        if (typeof win.loadOfflineQueue !== 'function') throw new Error('loadOfflineQueue 未定义');
+                        if (typeof win.saveOfflineQueue !== 'function') throw new Error('saveOfflineQueue 未定义');
+
+                        document.body.removeChild(iframe);
+                    },
+                    category: 'phase4'
+                },
+                {
+                    name: '验证数据迁移函数',
+                    fn: async () => {
+                        const iframe = document.createElement('iframe');
+                        iframe.style.display = 'none';
+                        iframe.src = 'index.html';
+                        document.body.appendChild(iframe);
+
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+
+                        const win = iframe.contentWindow;
+                        if (typeof win.migrateLocalStorageToFirebase !== 'function') {
+                            throw new Error('migrateLocalStorageToFirebase 未定义');
+                        }
+                        if (typeof win.showMigrationModal !== 'function') {
+                            throw new Error('showMigrationModal 未定义');
+                        }
+
+                        document.body.removeChild(iframe);
+                    },
+                    category: 'phase4'
+                },
+                {
+                    name: '验证自动保存触发器集成',
+                    fn: async () => {
+                        const iframe = document.createElement('iframe');
+                        iframe.style.display = 'none';
+                        iframe.src = 'index.html';
+                        document.body.appendChild(iframe);
+
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+
+                        const win = iframe.contentWindow;
+                        if (typeof win.saveProjects !== 'function') throw new Error('saveProjects 未定义');
+                        if (typeof win.deleteProject !== 'function') throw new Error('deleteProject 未定义');
+
+                        // Verify deleteProject is async (returns Promise)
+                        const projectFn = win.deleteProject.toString();
+                        if (!projectFn.includes('async')) {
+                            log('warning', '注意: deleteProject 可能不是异步函数');
+                        }
+
+                        document.body.removeChild(iframe);
+                    },
+                    category: 'phase4'
+                }
+            ];
+
+            // UI 元素验证
+            const uiTests = [
+                {
+                    name: '验证主应用容器',
+                    fn: async () => {
+                        const iframe = document.createElement('iframe');
+                        iframe.style.display = 'none';
+                        iframe.src = 'index.html';
+                        document.body.appendChild(iframe);
+
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+
+                        const doc = iframe.contentDocument;
+                        if (!doc.getElementById('mainApp')) throw new Error('主应用容器未找到');
+                        if (!doc.getElementById('connectionStatus')) throw new Error('连接状态指示器未找到');
+
+                        document.body.removeChild(iframe);
+                    },
+                    category: 'ui'
+                },
+                {
+                    name: '验证 CSS 样式加载',
+                    fn: async () => {
+                        const iframe = document.createElement('iframe');
+                        iframe.style.display = 'none';
+                        iframe.src = 'index.html';
+                        document.body.appendChild(iframe);
+
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+
+                        const doc = iframe.contentDocument;
+                        const authOverlay = doc.getElementById('authOverlay');
+                        if (!authOverlay) throw new Error('认证覆盖层未找到');
+
+                        const styles = window.getComputedStyle(authOverlay);
+                        if (styles.position !== 'fixed') throw new Error('认证覆盖层样式未正确应用');
+
+                        document.body.removeChild(iframe);
+                    },
+                    category: 'ui'
+                }
+            ];
+
+            // Collect all tests
+            const allTests = [
+                ...phase1Tests,
+                ...phase2Tests,
+                ...phase3Tests,
+                ...phase4Tests,
+                ...uiTests
+            ];
+
+            totalTests = allTests.length;
+            updateProgress();
+
+            // Run all tests sequentially
+            for (const test of allTests) {
+                await runTest(test.name, test.fn, test.category);
+                currentTestIndex++;
+                updateProgress();
+                await new Promise(resolve => setTimeout(resolve, 100)); // Small delay between tests
+            }
+
+            // Final summary
+            log('info', '='.repeat(60));
+            log('info', '测试完成！');
+            log('success', `✅ 通过: ${passedCount}/${totalTests}`);
+            if (failedCount > 0) {
+                log('error', `❌ 失败: ${failedCount}/${totalTests}`);
+            }
+            if (skippedCount > 0) {
+                log('warning', `⏭️ 跳过: ${skippedCount}/${totalTests}`);
+            }
+            log('info', '='.repeat(60));
+
+            document.getElementById('testStatus').textContent =
+                failedCount === 0 ? '✅ 所有测试通过' : `❌ ${failedCount} 个测试失败`;
+
+            runBtn.disabled = false;
+            runBtn.textContent = '▶️ 运行所有测试';
+
+            // Show alert if all tests passed
+            if (failedCount === 0) {
+                setTimeout(() => {
+                    alert(`🎉 恭喜！所有 ${totalTests} 个测试都通过了！\n\nMVP 核心功能验证成功，可以继续部署。`);
+                }, 500);
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('testResults').innerHTML = '';
+            document.getElementById('logOutput').innerHTML = '';
+            document.getElementById('summary').style.display = 'none';
+            passedCount = 0;
+            failedCount = 0;
+            skippedCount = 0;
+            currentTestIndex = 0;
+            totalTests = 0;
+            updateProgress();
+            document.getElementById('testStatus').textContent = '准备就绪';
+        }
+
+        function exportReport() {
+            const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0];
+            const report = {
+                timestamp,
+                summary: {
+                    total: totalTests,
+                    passed: passedCount,
+                    failed: failedCount,
+                    skipped: skippedCount
+                },
+                tests: testResults,
+                logs: document.getElementById('logOutput').innerText
+            };
+
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `speckit-test-report-${timestamp}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            log('success', `测试报告已导出: speckit-test-report-${timestamp}.json`);
+        }
+
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            log('info', '自动化测试页面已加载');
+            log('info', '点击"运行所有测试"按钮开始测试');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,4655 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spec Kit 项目管理面板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            font-size: 1rem;
+            opacity: 0.95;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+        }
+
+        /* 标签页导航 */
+        .tabs-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 12px;
+            border-radius: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.25);
+            color: white;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tab-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.1);
+            transition: left 0.3s;
+        }
+
+        .tab-btn:hover::before {
+            left: 100%;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.35);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #2563eb;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+            border-color: rgba(37, 99, 235, 0.2);
+        }
+
+        .tab-btn.overview-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .tab-btn.overview-btn:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-2px);
+        }
+
+        .tab-btn.overview-btn.active {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+        }
+
+        .add-project-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #f59e0b, #ea580c);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-left: auto;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+        }
+
+        .add-project-btn:hover {
+            background: linear-gradient(135deg, #ea580c, #dc2626);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(245, 158, 11, 0.5);
+        }
+
+        .add-project-btn:active {
+            transform: translateY(0);
+        }
+
+        /* 标签页内容 */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 项目概览页面 */
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 20px;
+        }
+
+        .project-overview-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid #e5e7eb;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .project-overview-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #2563eb, #3b82f6, #60a5fa);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .project-overview-card:hover::before {
+            opacity: 1;
+        }
+
+        .project-overview-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.2);
+            border-color: #3b82f6;
+        }
+
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .project-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .delete-project-btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .delete-project-btn:hover {
+            background: #b91c1c;
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+        }
+
+        .delete-project-btn:active {
+            transform: scale(0.98);
+        }
+
+        .iterations-summary {
+            background: #f8fafc;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .iterations-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 8px;
+        }
+
+        .iteration-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.75rem;
+        }
+
+        .iteration-item:last-child {
+            border-bottom: none;
+        }
+
+        .iteration-name {
+            color: #2d3748;
+            font-weight: 500;
+        }
+
+        .iteration-progress {
+            color: #718096;
+        }
+
+        /* 项目内容区域 */
+        .project-content {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 16px;
+            align-items: start;
+        }
+
+        /* 迭代侧边栏 */
+        .iterations-sidebar {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .sidebar-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .add-iteration-btn {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+        }
+
+        .add-iteration-btn:hover {
+            background: linear-gradient(135deg, #1d4ed8, #1e40af);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+        }
+
+        .add-iteration-btn:active {
+            transform: translateY(0);
+        }
+
+        .iteration-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .iteration-card {
+            background: #ffffff;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .iteration-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: #2563eb;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .iteration-card:hover::before {
+            opacity: 1;
+        }
+
+        .iteration-card:hover {
+            border-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+            transform: translateX(2px);
+        }
+
+        .iteration-card.active {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            border-color: #2563eb;
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+        }
+
+        .iteration-card.active::before {
+            opacity: 0;
+        }
+
+        .iteration-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .iteration-card-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .iteration-card.active .iteration-card-name {
+            color: white;
+        }
+
+        .delete-iteration-btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .delete-iteration-btn:hover {
+            background: #b91c1c;
+            transform: scale(1.05);
+        }
+
+        .delete-iteration-btn:active {
+            transform: scale(0.95);
+        }
+
+        .iteration-card.active .delete-iteration-btn {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .iteration-card.active .delete-iteration-btn:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        .iteration-card-desc {
+            font-size: 0.7rem;
+            color: #718096;
+            margin-bottom: 6px;
+            line-height: 1.3;
+        }
+
+        .iteration-card.active .iteration-card-desc {
+            color: rgba(255,255,255,0.9);
+        }
+
+        .iteration-card-progress {
+            font-size: 0.7rem;
+            color: #4a5568;
+        }
+
+        .iteration-card.active .iteration-card-progress {
+            color: rgba(255,255,255,0.95);
+        }
+
+        /* 工作流程区域 */
+        .workflow-area {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+
+        .workflow-area::-webkit-scrollbar,
+        .iterations-sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .workflow-area::-webkit-scrollbar-track,
+        .iterations-sidebar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+
+        .workflow-area::-webkit-scrollbar-thumb,
+        .iterations-sidebar::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 4px;
+        }
+
+        .workflow-area::-webkit-scrollbar-thumb:hover,
+        .iterations-sidebar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .workflow {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .command-card {
+            background: white;
+            border-radius: 10px;
+            padding: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: visible;
+            border: 2px solid #e5e7eb;
+        }
+
+        .command-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            border-color: #cbd5e0;
+        }
+
+        .command-card.completed {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border: 2px solid #10b981;
+        }
+
+        .command-card.completed.init-phase {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 2px solid #9ca3af;
+            opacity: 0.85;
+        }
+
+        .command-card.completed.cycle-1 {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border: 2px solid #3b82f6;
+        }
+
+        .command-card.completed.cycle-2 {
+            background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+            border: 2px solid #ec4899;
+        }
+
+        .command-card.completed.cycle-3 {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #f59e0b;
+        }
+
+        .command-card.completed.cycle-4 {
+            background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+            border: 2px solid #6366f1;
+        }
+
+        .command-card.completed.cycle-5 {
+            background: linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%);
+            border: 2px solid #14b8a6;
+        }
+
+        .command-card.completed.cycle-6 {
+            background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%);
+            border: 2px solid #f43f5e;
+        }
+
+        .command-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #2563eb, #1d4ed8);
+            border-radius: 10px 10px 0 0;
+        }
+
+        .command-card.completed::before {
+            background: linear-gradient(90deg, #10b981, #059669);
+        }
+
+        .command-card.completed.init-phase::before {
+            background: linear-gradient(90deg, #9ca3af, #6b7280);
+        }
+
+        .command-card.completed.cycle-1::before {
+            background: linear-gradient(90deg, #3b82f6, #2563eb);
+        }
+
+        .command-card.completed.cycle-2::before {
+            background: linear-gradient(90deg, #ec4899, #db2777);
+        }
+
+        .command-card.completed.cycle-3::before {
+            background: linear-gradient(90deg, #f59e0b, #d97706);
+        }
+
+        .command-card.completed.cycle-4::before {
+            background: linear-gradient(90deg, #6366f1, #4f46e5);
+        }
+
+        .command-card.completed.cycle-5::before {
+            background: linear-gradient(90deg, #14b8a6, #0d9488);
+        }
+
+        .command-card.completed.cycle-6::before {
+            background: linear-gradient(90deg, #f43f5e, #e11d48);
+        }
+
+        .step-number {
+            display: inline-block;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 28px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+        }
+
+        .command-card.completed .step-number {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .command-card.completed.init-phase .step-number {
+            background: linear-gradient(135deg, #9ca3af, #6b7280);
+        }
+
+        .command-card.completed.cycle-1 .step-number {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+
+        .command-card.completed.cycle-2 .step-number {
+            background: linear-gradient(135deg, #ec4899, #db2777);
+        }
+
+        .command-card.completed.cycle-3 .step-number {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .command-card.completed.cycle-4 .step-number {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+        }
+
+        .command-card.completed.cycle-5 .step-number {
+            background: linear-gradient(135deg, #14b8a6, #0d9488);
+        }
+
+        .command-card.completed.cycle-6 .step-number {
+            background: linear-gradient(135deg, #f43f5e, #e11d48);
+        }
+
+        .command-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #1e293b;
+            letter-spacing: -0.2px;
+        }
+
+        .command-subtitle {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 10px;
+            font-weight: 500;
+            font-style: italic;
+        }
+
+        .command-desc {
+            font-size: 0.85rem;
+            color: #475569;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .command-box {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border: 2px dashed #cbd5e0;
+            border-radius: 6px;
+            padding: 10px;
+            font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+            font-size: 0.78rem;
+            color: #1e293b;
+            margin-bottom: 10px;
+            word-break: break-all;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+            font-weight: 500;
+        }
+
+        /* T040: Dynamic input fields (single-line & multi-line support) */
+        .command-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-family: inherit;
+            line-height: 1.4;
+            transition: all 0.2s;
+            background: #f8fafc;
+            resize: none;
+            overflow-y: hidden;
+            min-height: 38px;
+            max-height: 120px; /* T041: ~5 lines with scrollbar */
+        }
+
+        .command-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .command-input::placeholder {
+            color: #94a3b8;
+        }
+
+        /* T042: Code snippet styling (monospace font) */
+        .command-input.code-style {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.75rem;
+            background: #1e293b;
+            color: #e2e8f0;
+            border-color: #475569;
+        }
+
+        .command-input.code-style:focus {
+            border-color: #64748b;
+            background: #0f172a;
+            box-shadow: 0 0 0 3px rgba(71, 85, 105, 0.2);
+        }
+
+        .command-input.code-style::placeholder {
+            color: #64748b;
+        }
+
+        .command-notes {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 70px;
+            transition: all 0.2s;
+            background: #f8fafc;
+        }
+
+        .command-notes:focus {
+            outline: none;
+            border-color: #2563eb;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .command-notes::placeholder {
+            color: #94a3b8;
+        }
+
+        .copy-btn {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .copy-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .copy-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .copy-btn:hover {
+            background: linear-gradient(135deg, #1d4ed8, #1e40af);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
+        }
+
+        .copy-btn:active {
+            transform: scale(0.98) translateY(0);
+        }
+
+        .copy-btn.copied {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+        }
+
+        .note {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-left: 4px solid #f59e0b;
+            padding: 10px 12px;
+            margin-top: 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: #92400e;
+            line-height: 1.5;
+            box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15);
+        }
+
+        .phase-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 2px solid #e5e7eb;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .phase-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, #2563eb, #3b82f6);
+        }
+
+        .phase-header h2 {
+            color: #1e293b;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            margin-left: 4px;
+        }
+
+        .phase-icon {
+            font-size: 1.3rem;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+        }
+
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            max-width: 520px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: #1e293b;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            color: #4a5568;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            min-height: 100px;
+            resize: vertical;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+
+        .modal-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-btn-primary {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+        }
+
+        .modal-btn-primary:hover {
+            background: linear-gradient(135deg, #1d4ed8, #1e40af);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
+        }
+
+        .modal-btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .modal-btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+            border: 2px solid #cbd5e0;
+        }
+
+        .modal-btn-secondary:hover {
+            background: #cbd5e0;
+            border-color: #94a3b8;
+            transform: translateY(-1px);
+        }
+
+        .modal-btn-secondary:active {
+            transform: translateY(0);
+        }
+
+        @media (max-width: 1200px) {
+            .project-content {
+                grid-template-columns: 1fr;
+            }
+
+            .iterations-sidebar {
+                max-height: 250px;
+                position: relative;
+                top: 0;
+            }
+
+            .workflow-area {
+                max-height: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 1.6rem;
+            }
+
+            .header p {
+                font-size: 0.9rem;
+            }
+
+            .tabs-nav {
+                padding: 10px;
+                gap: 8px;
+            }
+
+            .tab-btn {
+                padding: 8px 14px;
+                font-size: 0.85rem;
+            }
+
+            .add-project-btn {
+                padding: 8px 14px;
+                font-size: 0.85rem;
+            }
+
+            .workflow {
+                grid-template-columns: 1fr;
+            }
+
+            .overview-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                padding: 24px;
+                width: 95%;
+            }
+
+            .modal-title {
+                font-size: 1.3rem;
+            }
+
+            .cycle-selector {
+                padding: 16px;
+            }
+
+            .cycle-options {
+                gap: 8px;
+            }
+
+            .cycle-option {
+                padding: 6px 12px;
+                font-size: 0.75rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.4rem;
+            }
+
+            .project-name {
+                font-size: 1rem;
+            }
+
+            .command-card {
+                padding: 14px;
+            }
+
+            .phase-header {
+                padding: 12px 16px;
+            }
+
+            .phase-header h2 {
+                font-size: 1rem;
+            }
+        }
+
+        .completed-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #10b981;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            font-weight: 600;
+        }
+
+        .command-card.completed.init-phase .completed-badge {
+            background: #9ca3af;
+        }
+
+        .command-card.completed.cycle-1 .completed-badge {
+            background: #3b82f6;
+        }
+
+        .command-card.completed.cycle-2 .completed-badge {
+            background: #ec4899;
+        }
+
+        .command-card.completed.cycle-3 .completed-badge {
+            background: #f59e0b;
+        }
+
+        .command-card.completed.cycle-4 .completed-badge {
+            background: #6366f1;
+        }
+
+        .command-card.completed.cycle-5 .completed-badge {
+            background: #14b8a6;
+        }
+
+        .command-card.completed.cycle-6 .completed-badge {
+            background: #f43f5e;
+        }
+
+        /* 循环选择器 */
+        .cycle-selector {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            border: 2px solid #e5e7eb;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cycle-selector::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #2563eb, #ec4899, #f59e0b, #10b981);
+        }
+
+        .cycle-selector-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cycle-selector-title::before {
+            content: '🎨';
+            font-size: 1.2rem;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+        }
+
+        .cycle-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .cycle-option {
+            padding: 8px 16px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .cycle-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .cycle-option.init {
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            color: #6b7280;
+            border-color: #9ca3af;
+        }
+
+        .cycle-option.cycle-1 {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            color: #1e40af;
+            border-color: #3b82f6;
+        }
+
+        .cycle-option.cycle-2 {
+            background: linear-gradient(135deg, #fce7f3, #fbcfe8);
+            color: #be185d;
+            border-color: #ec4899;
+        }
+
+        .cycle-option.cycle-3 {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #92400e;
+            border-color: #f59e0b;
+        }
+
+        .cycle-option.cycle-4 {
+            background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+            color: #3730a3;
+            border-color: #6366f1;
+        }
+
+        .cycle-option.cycle-5 {
+            background: linear-gradient(135deg, #ccfbf1, #99f6e4);
+            color: #115e59;
+            border-color: #14b8a6;
+        }
+
+        .cycle-option.cycle-6 {
+            background: linear-gradient(135deg, #ffe4e6, #fecdd3);
+            color: #9f1239;
+            border-color: #f43f5e;
+        }
+
+        .cycle-option.active {
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+            transform: scale(1.08) translateY(-2px);
+            border-width: 3px;
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% {
+                box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+            }
+            50% {
+                box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: #718096;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .empty-state-icon {
+            font-size: 5rem;
+            margin-bottom: 24px;
+            opacity: 0.7;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));
+            animation: floatAnimation 3s ease-in-out infinite;
+        }
+
+        @keyframes floatAnimation {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .empty-state-text {
+            font-size: 1.05rem;
+            line-height: 1.8;
+        }
+
+        /* 数据管理按钮 */
+        .data-btn {
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.25);
+            color: white;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+        }
+
+        .data-btn:hover {
+            background: rgba(255,255,255,0.35);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .export-btn:hover {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .import-btn:hover {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+
+        .clear-btn:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+        }
+
+        /* Toast 通知 */
+        .toast {
+            position: fixed;
+            top: 100px;
+            right: 30px;
+            background: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-left: 4px solid #10b981;
+            animation: toastSlideIn 0.3s ease-out;
+        }
+
+        @keyframes toastSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .toast.show {
+            display: flex;
+        }
+
+        .toast.success {
+            border-left-color: #10b981;
+            color: #047857;
+        }
+
+        .toast.error {
+            border-left-color: #dc2626;
+            color: #991b1b;
+        }
+
+        .toast.warning {
+            border-left-color: #f59e0b;
+            color: #92400e;
+        }
+
+        /* T045: Loading Spinner & Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            backdrop-filter: blur(2px);
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spinner-rotate 0.8s linear infinite;
+        }
+
+        @keyframes spinner-rotate {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        /* 左侧项目树布局 */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .project-tree-sidebar {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+            position: sticky;
+            top: 20px;
+        }
+
+        .project-tree-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .project-tree-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .project-tree-item {
+            margin-bottom: 8px;
+        }
+
+        .project-tree-node {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #f8fafc;
+            border: 2px solid transparent;
+        }
+
+        .project-tree-node:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e0;
+        }
+
+        .project-tree-node.active {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            border-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .expand-icon {
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+
+        .expand-icon.expanded {
+            transform: rotate(90deg);
+        }
+
+        .project-tree-label {
+            flex: 1;
+            font-size: 0.85rem;
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .project-tree-children {
+            margin-left: 24px;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .project-tree-children.expanded {
+            display: block;
+        }
+
+        .iteration-tree-node {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            border: 2px solid #e5e7eb;
+            margin-bottom: 4px;
+            font-size: 0.8rem;
+        }
+
+        .iteration-tree-node:hover {
+            border-color: #cbd5e0;
+            background: #f8fafc;
+        }
+
+        .iteration-tree-node.active {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border-color: #10b981;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .iteration-tree-label {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .iteration-tree-badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: #e5e7eb;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .iteration-tree-node.active .iteration-tree-badge {
+            background: rgba(255,255,255,0.25);
+            color: white;
+        }
+
+        /* ========================================
+           Step Indicators & Progress (Phase 5)
+           ======================================== */
+
+        .iteration-tree-node {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .iteration-tree-progress {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .iteration-progress-bar {
+            flex: 1;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .iteration-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #059669);
+            border-radius: 3px;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 4px rgba(16, 185, 129, 0.4);
+        }
+
+        .iteration-tree-node.active .iteration-progress-bar {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .iteration-tree-node.active .iteration-progress-fill {
+            background: white;
+            box-shadow: 0 0 6px rgba(255,255,255,0.6);
+        }
+
+        .step-indicators-container {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            align-items: center;
+            width: 100%;
+            padding-top: 4px;
+        }
+
+        .step-indicator {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: help;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .step-indicator.completed {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            box-shadow: 0 1px 3px rgba(16, 185, 129, 0.3);
+        }
+
+        .step-indicator.incomplete {
+            background: #e5e7eb;
+            color: #94a3b8;
+            border: 2px solid #cbd5e0;
+        }
+
+        .iteration-tree-node.active .step-indicator.completed {
+            background: white;
+            color: #10b981;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+
+        .iteration-tree-node.active .step-indicator.incomplete {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.4);
+            color: rgba(255,255,255,0.7);
+        }
+
+        .step-indicator:hover {
+            transform: scale(1.15);
+            z-index: 10;
+        }
+
+        .step-indicator.completed:hover {
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.5);
+        }
+
+        /* Furthest iteration highlight (T032) */
+        .iteration-tree-node.furthest {
+            border-color: #f59e0b;
+            box-shadow: 0 2px 12px rgba(245, 158, 11, 0.2);
+        }
+
+        .iteration-tree-node.furthest::before {
+            content: '🏆';
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            font-size: 12px;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+        }
+
+        .iteration-tree-node.furthest:not(.active) {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+        }
+
+        .iteration-tree-node.furthest:not(.active):hover {
+            background: linear-gradient(135deg, #fde68a, #fcd34d);
+        }
+
+        /* Tooltip styling (T033) */
+        .step-indicator[data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: pre-line;
+            max-width: 250px;
+            min-width: 180px;
+            text-align: left;
+            z-index: 1000;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            animation: tooltipFadeIn 0.2s ease-out;
+        }
+
+        .step-indicator[data-tooltip]:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 110%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        @keyframes tooltipFadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .main-content-area {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            min-height: calc(100vh - 200px);
+        }
+
+        @media (max-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .project-tree-sidebar {
+                position: relative;
+                top: 0;
+                max-height: 300px;
+            }
+        }
+
+        /* ========================================
+           Authentication UI Styles (认证界面样式)
+           ======================================== */
+
+        #authOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        #authOverlay.hidden {
+            display: none;
+        }
+
+        .auth-container {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 440px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .auth-header h2 {
+            color: #1e3a8a;
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .auth-header p {
+            color: #6b7280;
+            font-size: 0.95rem;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            background: #f3f4f6;
+            padding: 6px;
+            border-radius: 10px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .auth-tab.active {
+            background: white;
+            color: #2563eb;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #374151;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #9ca3af;
+        }
+
+        .auth-button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #2563eb, #1e40af);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .auth-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .auth-button:active {
+            transform: translateY(0);
+        }
+
+        .auth-button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .auth-error {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .auth-error.show {
+            display: block;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .auth-footer {
+            margin-top: 20px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.85rem;
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            font-size: 0.85rem;
+            font-weight: 600;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: fadeIn 0.3s;
+        }
+
+        .connection-status.online {
+            color: #059669;
+        }
+
+        .connection-status.offline {
+            color: #dc2626;
+        }
+
+        .user-info {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            font-size: 0.85rem;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-info.show {
+            display: flex;
+        }
+
+        .user-email {
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            padding: 6px 14px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+    </style>
+
+    <!-- Firebase SDK v12.4.0 (Modular ES Modules via CDN) -->
+    <script type="module">
+        // Import Firebase core and services
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js';
+        import {
+            getAuth,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged,
+            setPersistence,
+            browserLocalPersistence
+        } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js';
+        import {
+            getDatabase,
+            ref,
+            set,
+            get,
+            update,
+            remove,
+            onValue,
+            push,
+            child
+        } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js';
+
+        // Make Firebase available globally
+        window.firebase = {
+            app: null,
+            auth: null,
+            db: null,
+            initializeApp,
+            getAuth,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged,
+            setPersistence,
+            browserLocalPersistence,
+            getDatabase,
+            ref,
+            set,
+            get,
+            update,
+            remove,
+            onValue,
+            push,
+            child
+        };
+
+        console.log('✅ Firebase SDK v12.4.0 loaded successfully');
+    </script>
+</head>
+<body>
+    <!-- Authentication Overlay (认证覆盖层) -->
+    <div id="authOverlay" class="hidden">
+        <div class="auth-container">
+            <div class="auth-header">
+                <h2>🚀 Spec Kit 项目管理</h2>
+                <p>请登录或注册以继续</p>
+            </div>
+
+            <!-- Tab Navigation (标签导航) -->
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchAuthTab('login')">登录</button>
+                <button class="auth-tab" onclick="switchAuthTab('register')">注册</button>
+            </div>
+
+            <!-- Error Message (错误消息) -->
+            <div id="authError" class="auth-error"></div>
+
+            <!-- Login Form (登录表单) -->
+            <form id="loginForm" class="auth-form active" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="loginEmail">邮箱地址</label>
+                    <input type="email" id="loginEmail" placeholder="your@email.com" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">密码</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password" minlength="6">
+                </div>
+                <button type="submit" class="auth-button" id="loginButton">
+                    登录
+                </button>
+            </form>
+
+            <!-- Register Form (注册表单) -->
+            <form id="registerForm" class="auth-form" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="registerEmail">邮箱地址</label>
+                    <input type="email" id="registerEmail" placeholder="your@email.com" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">密码</label>
+                    <input type="password" id="registerPassword" placeholder="至少 6 位字符" required autocomplete="new-password" minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="registerPasswordConfirm">确认密码</label>
+                    <input type="password" id="registerPasswordConfirm" placeholder="再次输入密码" required autocomplete="new-password" minlength="6">
+                </div>
+                <button type="submit" class="auth-button" id="registerButton">
+                    注册
+                </button>
+            </form>
+
+            <!-- Footer (页脚) -->
+            <div class="auth-footer">
+                <p>使用 Firebase Authentication 保护您的数据安全</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Status Indicator (连接状态指示器) -->
+    <div id="connectionStatus" class="connection-status online" style="display: none;">
+        <span id="connectionIcon">🟢</span>
+        <span id="connectionText">在线</span>
+    </div>
+
+    <!-- User Info and Logout (用户信息和登出) -->
+    <div id="userInfo" class="user-info">
+        <span class="user-email" id="userEmail"></span>
+        <button class="logout-btn" onclick="handleLogout()">登出</button>
+    </div>
+
+    <div class="container" id="mainApp">
+        <div class="header">
+            <h1>🚀 Spec Kit 项目管理面板</h1>
+            <p>规范驱动开发（SDD）完整工作流</p>
+        </div>
+
+        <!-- 工具栏 -->
+        <div class="tabs-nav" id="tabsNav">
+            <button class="add-project-btn" onclick="openAddProjectModal()">➕ 新建项目</button>
+            <div style="margin-left: auto; display: flex; gap: 10px;">
+                <button class="data-btn export-btn" onclick="exportAllProjects()">💾 导出数据</button>
+                <button class="data-btn import-btn" onclick="openImportModal()">📂 导入数据</button>
+                <button class="data-btn clear-btn" onclick="openClearDataModal()">🗑️ 清空数据</button>
+            </div>
+        </div>
+
+        <!-- 主布局：左侧项目树 + 右侧内容区 -->
+        <div class="main-layout" id="mainLayout">
+            <!-- 左侧项目树 -->
+            <div class="project-tree-sidebar" id="projectTree"></div>
+
+            <!-- 右侧主内容区 -->
+            <div class="main-content-area" id="mainContent"></div>
+        </div>
+
+        <!-- 新建项目模态框 -->
+        <div class="modal" id="addProjectModal">
+            <div class="modal-content">
+                <div class="modal-title">新建项目</div>
+                <div class="form-group">
+                    <label class="form-label">项目名称</label>
+                    <input type="text" class="form-input" id="newProjectName" placeholder="输入项目名称">
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-secondary" onclick="closeAddProjectModal()">取消</button>
+                    <button class="modal-btn modal-btn-primary" onclick="addProject()">创建</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 新建迭代模态框 -->
+        <div class="modal" id="addIterationModal">
+            <div class="modal-content">
+                <div class="modal-title">新建迭代</div>
+                <div class="form-group">
+                    <label class="form-label">迭代名称</label>
+                    <input type="text" class="form-input" id="newIterationName" placeholder="例如: 增加UI、多Agent版本">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">迭代描述（可选）</label>
+                    <textarea class="form-textarea" id="newIterationDesc" placeholder="描述本次迭代的目标和内容"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-secondary" onclick="closeAddIterationModal()">取消</button>
+                    <button class="modal-btn modal-btn-primary" onclick="addIteration()">创建</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 导入数据模态框 -->
+        <div class="modal" id="importModal">
+            <div class="modal-content">
+                <div class="modal-title">导入项目数据</div>
+                <div class="form-group">
+                    <label class="form-label">选择 JSON 文件</label>
+                    <input type="file" id="importFileInput" accept=".json" class="form-input" onchange="handleFileSelect(event)">
+                </div>
+                <div id="importPreview" style="display: none; margin-top: 16px;">
+                    <div class="form-label">文件预览</div>
+                    <div id="importPreviewContent" style="background: #f8fafc; padding: 12px; border-radius: 6px; font-size: 0.85rem; color: #475569; border: 2px solid #e5e7eb;"></div>
+                    <div class="form-group" style="margin-top: 16px;">
+                        <label class="form-label">导入模式</label>
+                        <div style="display: flex; gap: 12px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="radio" name="importMode" value="merge" checked>
+                                <span style="font-size: 0.9rem;">合并模式（保留现有数据）</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="radio" name="importMode" value="replace">
+                                <span style="font-size: 0.9rem; color: #dc2626;">覆盖模式（清空现有数据）</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-secondary" onclick="closeImportModal()">取消</button>
+                    <button class="modal-btn modal-btn-primary" id="confirmImportBtn" onclick="confirmImport()" disabled>导入</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 清空数据模态框 -->
+        <div class="modal" id="clearDataModal">
+            <div class="modal-content">
+                <div class="modal-title" style="color: #dc2626;">⚠️ 清空所有数据</div>
+                <div style="background: #fef2f2; padding: 16px; border-radius: 8px; border: 2px solid #fecaca; margin-bottom: 16px;">
+                    <p style="color: #991b1b; font-size: 0.9rem; line-height: 1.6; margin-bottom: 12px;">
+                        <strong>警告：</strong>此操作将永久删除所有项目数据，且<strong>不可撤销</strong>！
+                    </p>
+                    <p style="color: #991b1b; font-size: 0.85rem;">
+                        建议在清空前先导出数据进行备份。
+                    </p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">请输入 <strong style="color: #dc2626;">确认删除</strong> 以继续</label>
+                    <input type="text" class="form-input" id="clearConfirmInput" placeholder="输入"确认删除"">
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-secondary" onclick="closeClearDataModal()">取消</button>
+                    <button class="modal-btn" style="background: #dc2626; color: white;" onclick="confirmClearData()">确认清空</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast 通知 -->
+        <div id="toast" class="toast"></div>
+
+        <!-- T045: Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div>
+                <div class="loading-spinner"></div>
+                <div class="loading-text" id="loadingText">加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========================================
+        // Firebase Configuration & Initialization
+        // ========================================
+
+        // Firebase configuration (from .env file)
+        // ⚠️ SECURITY: These credentials are safe for client-side web apps
+        // Real security is enforced by Firebase Security Rules on the server
+        const firebaseConfig = {
+            apiKey: "AIzaSyBo5-m7olgLlNU_9sGA7sm78VDiIEuLfAc",
+            authDomain: "speckit-project-manager.firebaseapp.com",
+            databaseURL: "https://speckit-project-manager-default-rtdb.firebaseio.com",
+            projectId: "speckit-project-manager",
+            storageBucket: "speckit-project-manager.firebasestorage.app",
+            messagingSenderId: "1053522228569",
+            appId: "1:1053522228569:web:4ae98ea1c7427028c3c848"
+        };
+
+        // Global Firebase state (全局 Firebase 状态)
+        let currentUser = null;          // Current authenticated user (当前认证用户)
+        let isOnline = navigator.onLine; // Online/offline status (在线/离线状态)
+        let firebaseInitialized = false; // Firebase initialization status (Firebase 初始化状态)
+        let offlineQueue = [];           // Queue for offline operations (离线操作队列)
+
+        // Expose to window for testing and cross-script access
+        // 暴露到 window 对象以便测试和跨脚本访问
+        window.firebaseConfig = firebaseConfig;
+        window.currentUser = currentUser;
+        window.isOnline = isOnline;
+        window.firebaseInitialized = firebaseInitialized;
+        window.offlineQueue = offlineQueue;
+
+        /**
+         * Initialize Firebase app and services
+         * 初始化 Firebase 应用和服务
+         * @returns {Promise<void>}
+         */
+        async function initFirebase() {
+            try {
+                // Check if Firebase SDK is loaded
+                if (typeof window.firebase === 'undefined') {
+                    throw new Error('Firebase SDK not loaded. Check CDN connection.');
+                }
+
+                // Initialize Firebase app
+                window.firebase.app = window.firebase.initializeApp(firebaseConfig);
+                window.firebase.auth = window.firebase.getAuth(window.firebase.app);
+                window.firebase.db = window.firebase.getDatabase(window.firebase.app);
+
+                // Set authentication persistence
+                await window.firebase.setPersistence(
+                    window.firebase.auth,
+                    window.firebase.browserLocalPersistence
+                );
+
+                // Monitor connection status
+                const connectedRef = window.firebase.ref(window.firebase.db, '.info/connected');
+                window.firebase.onValue(connectedRef, (snapshot) => {
+                    isOnline = snapshot.val() === true;
+                    window.isOnline = isOnline; // Sync to window for testing
+                    updateConnectionStatus();
+                    if (isOnline) {
+                        processOfflineQueue();
+                    }
+                });
+
+                // Monitor authentication state
+                window.firebase.onAuthStateChanged(window.firebase.auth, (user) => {
+                    currentUser = user;
+                    window.currentUser = user; // Sync to window for testing
+                    handleAuthStateChange(user);
+                });
+
+                firebaseInitialized = true;
+                window.firebaseInitialized = true; // Sync to window for testing
+                console.log('✅ Firebase initialized successfully');
+
+                // Load offline queue from localStorage
+                loadOfflineQueue();
+
+            } catch (error) {
+                console.error('❌ Firebase initialization failed:', error);
+                showToast('Firebase 初始化失败: ' + error.message, 'error');
+                firebaseInitialized = false;
+            }
+        }
+
+        /**
+         * Handle authentication state changes
+         * 处理认证状态变化
+         * @param {Object|null} user - Firebase user object
+         */
+        function handleAuthStateChange(user) {
+            if (user) {
+                console.log('✅ User logged in:', user.email);
+                // Hide login UI, show main app
+                hideAuthUI();
+                // Load user projects from Firebase
+                loadProjectsFromFirebase(user.uid);
+            } else {
+                console.log('ℹ️ User logged out');
+                // Show login UI, hide main app
+                showAuthUI();
+                // Clear local projects
+                projects = [];
+                renderAllViews();
+            }
+        }
+
+        /**
+         * Update connection status indicator
+         * 更新连接状态指示器
+         */
+        function updateConnectionStatus() {
+            const statusText = isOnline ? '🟢 在线' : '🔴 离线';
+            console.log('Connection status:', statusText);
+            // Update UI indicator (will be implemented in auth UI)
+        }
+
+        /**
+         * Load offline queue from localStorage
+         * 从 localStorage 加载离线队列
+         */
+        function loadOfflineQueue() {
+            try {
+                const saved = localStorage.getItem('firebase_offline_queue');
+                if (saved) {
+                    offlineQueue = JSON.parse(saved);
+                    console.log(`📦 Loaded ${offlineQueue.length} operations from offline queue`);
+                }
+            } catch (error) {
+                console.error('Failed to load offline queue:', error);
+                offlineQueue = [];
+            }
+        }
+
+        /**
+         * Save offline queue to localStorage
+         * 保存离线队列到 localStorage
+         */
+        function saveOfflineQueue() {
+            try {
+                localStorage.setItem('firebase_offline_queue', JSON.stringify(offlineQueue));
+            } catch (error) {
+                console.error('Failed to save offline queue:', error);
+            }
+        }
+
+        /**
+         * Process pending offline operations
+         * 处理待处理的离线操作
+         */
+        async function processOfflineQueue() {
+            if (!isOnline || offlineQueue.length === 0) return;
+
+            console.log(`🔄 Processing ${offlineQueue.length} offline operations...`);
+            const failedOps = [];
+
+            for (const op of offlineQueue) {
+                try {
+                    if (op.type === 'set') {
+                        const dbRef = window.firebase.ref(window.firebase.db, op.path);
+                        await window.firebase.set(dbRef, op.data);
+                    } else if (op.type === 'update') {
+                        const dbRef = window.firebase.ref(window.firebase.db, op.path);
+                        await window.firebase.update(dbRef, op.data);
+                    } else if (op.type === 'delete') {
+                        const dbRef = window.firebase.ref(window.firebase.db, op.path);
+                        await window.firebase.remove(dbRef);
+                    }
+                    console.log(`✅ Synced operation ${op.id}`);
+                } catch (error) {
+                    console.error(`❌ Failed to sync operation ${op.id}:`, error);
+                    failedOps.push(op);
+                }
+            }
+
+            offlineQueue = failedOps;
+            saveOfflineQueue();
+
+            if (failedOps.length === 0) {
+                showToast('✅ 所有离线更改已同步', 'success');
+            } else {
+                showToast(`⚠️ ${failedOps.length} 个操作同步失败`, 'warning');
+            }
+        }
+
+        // ========================================
+        // Authentication Functions (认证函数)
+        // T010, T011, T012, T015, T016
+        // ========================================
+
+        /**
+         * T010: Register new user with email and password
+         * 注册新用户
+         * @param {string} email - User email
+         * @param {string} password - User password
+         * @returns {Promise<Object>} User credential
+         */
+        async function registerUser(email, password) {
+            try {
+                console.log('🔐 Registering user:', email);
+                const userCredential = await window.firebase.createUserWithEmailAndPassword(
+                    window.firebase.auth,
+                    email,
+                    password
+                );
+                console.log('✅ User registered successfully:', userCredential.user.uid);
+                showToast('✅ 注册成功！欢迎加入 Spec Kit', 'success');
+                return userCredential;
+            } catch (error) {
+                console.error('❌ Registration failed:', error);
+                throw error;
+            }
+        }
+
+        /**
+         * T011: Login user with email and password
+         * 用户登录
+         * @param {string} email - User email
+         * @param {string} password - User password
+         * @returns {Promise<Object>} User credential
+         */
+        async function loginUser(email, password) {
+            try {
+                console.log('🔐 Logging in user:', email);
+                const userCredential = await window.firebase.signInWithEmailAndPassword(
+                    window.firebase.auth,
+                    email,
+                    password
+                );
+                console.log('✅ User logged in successfully:', userCredential.user.uid);
+                showToast('✅ 登录成功！', 'success');
+                return userCredential;
+            } catch (error) {
+                console.error('❌ Login failed:', error);
+                throw error;
+            }
+        }
+
+        /**
+         * T012: Logout current user
+         * 用户登出
+         * @returns {Promise<void>}
+         */
+        async function logoutUser() {
+            try {
+                console.log('🔐 Logging out user:', currentUser?.email);
+                await window.firebase.signOut(window.firebase.auth);
+                console.log('✅ User logged out successfully');
+                showToast('✅ 已安全退出', 'success');
+            } catch (error) {
+                console.error('❌ Logout failed:', error);
+                showToast('❌ 退出失败: ' + error.message, 'error');
+            }
+        }
+
+        /**
+         * T015: Display authentication error message
+         * 显示认证错误消息
+         * @param {string} errorCode - Firebase error code
+         * @returns {string} User-friendly error message
+         */
+        function getAuthErrorMessage(errorCode) {
+            const errorMessages = {
+                'auth/email-already-in-use': '该邮箱已被注册，请直接登录',
+                'auth/invalid-email': '邮箱格式不正确',
+                'auth/operation-not-allowed': '邮箱/密码登录未启用，请联系管理员',
+                'auth/weak-password': '密码强度不足，请使用至少 6 位字符',
+                'auth/user-disabled': '该账户已被禁用',
+                'auth/user-not-found': '用户不存在，请先注册',
+                'auth/wrong-password': '密码错误，请重试',
+                'auth/invalid-credential': '邮箱或密码错误',
+                'auth/too-many-requests': '请求过于频繁，请稍后再试',
+                'auth/network-request-failed': '网络连接失败，请检查网络',
+                'auth/popup-closed-by-user': '登录窗口已关闭',
+                'auth/cancelled-popup-request': '登录请求已取消'
+            };
+            return errorMessages[errorCode] || `认证错误: ${errorCode}`;
+        }
+
+        /**
+         * Display error in auth form
+         * 在认证表单中显示错误
+         * @param {string} message - Error message
+         */
+        function showAuthError(message) {
+            const errorEl = document.getElementById('authError');
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+            setTimeout(() => {
+                errorEl.classList.remove('show');
+            }, 5000);
+        }
+
+        /**
+         * Clear authentication error
+         * 清除认证错误
+         */
+        function clearAuthError() {
+            const errorEl = document.getElementById('authError');
+            errorEl.classList.remove('show');
+        }
+
+        /**
+         * T016: Show authentication UI (login/register forms)
+         * 显示认证界面
+         */
+        function showAuthUI() {
+            const authOverlay = document.getElementById('authOverlay');
+            const mainApp = document.getElementById('mainApp');
+            const userInfo = document.getElementById('userInfo');
+
+            authOverlay.classList.remove('hidden');
+            if (mainApp) mainApp.style.display = 'none';
+            userInfo.classList.remove('show');
+
+            console.log('🔓 Showing authentication UI');
+        }
+
+        /**
+         * T016: Hide authentication UI and show main app
+         * 隐藏认证界面并显示主应用
+         */
+        function hideAuthUI() {
+            const authOverlay = document.getElementById('authOverlay');
+            const mainApp = document.getElementById('mainApp');
+            const userInfo = document.getElementById('userInfo');
+            const userEmail = document.getElementById('userEmail');
+
+            authOverlay.classList.add('hidden');
+            if (mainApp) mainApp.style.display = 'block';
+
+            // Show user info
+            if (currentUser && userEmail) {
+                userEmail.textContent = currentUser.email;
+                userInfo.classList.add('show');
+            }
+
+            console.log('🔓 Hiding authentication UI');
+        }
+
+        /**
+         * Switch between login and register tabs
+         * 切换登录/注册标签
+         * @param {string} tab - 'login' or 'register'
+         */
+        function switchAuthTab(tab) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const tabs = document.querySelectorAll('.auth-tab');
+
+            clearAuthError();
+
+            if (tab === 'login') {
+                loginForm.classList.add('active');
+                registerForm.classList.remove('active');
+                tabs[0].classList.add('active');
+                tabs[1].classList.remove('active');
+            } else {
+                registerForm.classList.add('active');
+                loginForm.classList.remove('active');
+                tabs[1].classList.add('active');
+                tabs[0].classList.remove('active');
+            }
+        }
+
+        /**
+         * Handle login form submission
+         * 处理登录表单提交
+         * @param {Event} event - Form submit event
+         */
+        async function handleLogin(event) {
+            event.preventDefault();
+            clearAuthError();
+
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const button = document.getElementById('loginButton');
+
+            button.disabled = true;
+            button.textContent = '登录中...';
+
+            try {
+                await loginUser(email, password);
+                // Auth state change will trigger hideAuthUI()
+            } catch (error) {
+                showAuthError(getAuthErrorMessage(error.code));
+            } finally {
+                button.disabled = false;
+                button.textContent = '登录';
+            }
+        }
+
+        /**
+         * Handle register form submission
+         * 处理注册表单提交
+         * @param {Event} event - Form submit event
+         */
+        async function handleRegister(event) {
+            event.preventDefault();
+            clearAuthError();
+
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+            const button = document.getElementById('registerButton');
+
+            // Validate password match
+            if (password !== passwordConfirm) {
+                showAuthError('两次输入的密码不一致');
+                return;
+            }
+
+            button.disabled = true;
+            button.textContent = '注册中...';
+
+            try {
+                await registerUser(email, password);
+                // Auth state change will trigger hideAuthUI()
+            } catch (error) {
+                showAuthError(getAuthErrorMessage(error.code));
+            } finally {
+                button.disabled = false;
+                button.textContent = '注册';
+            }
+        }
+
+        /**
+         * Handle logout button click
+         * 处理登出按钮点击
+         */
+        async function handleLogout() {
+            if (confirm('确定要退出登录吗？')) {
+                await logoutUser();
+                // Auth state change will trigger showAuthUI()
+            }
+        }
+
+        /**
+         * Update connection status indicator
+         * 更新连接状态指示器
+         */
+        function updateConnectionStatus() {
+            const statusEl = document.getElementById('connectionStatus');
+            const iconEl = document.getElementById('connectionIcon');
+            const textEl = document.getElementById('connectionText');
+
+            if (!statusEl) return;
+
+            statusEl.style.display = 'flex';
+
+            if (isOnline) {
+                statusEl.classList.remove('offline');
+                statusEl.classList.add('online');
+                iconEl.textContent = '🟢';
+                textEl.textContent = '在线';
+            } else {
+                statusEl.classList.remove('online');
+                statusEl.classList.add('offline');
+                iconEl.textContent = '🔴';
+                textEl.textContent = '离线';
+            }
+        }
+
+        // ========================================
+        // Firebase Data Persistence Functions (数据持久化函数)
+        // T017, T018, T019, T020, T021, T025, T026, T027, T028
+        // ========================================
+
+        /**
+         * T017: Save project to Firebase
+         * 保存项目到 Firebase
+         * @param {string} userId - User ID
+         * @param {string} projectId - Project ID
+         * @param {Object} projectData - Project data
+         * @returns {Promise<void>}
+         */
+        async function saveProjectToFirebase(userId, projectId, projectData) {
+            try {
+                // T025: Add timestamp
+                const dataWithTimestamp = {
+                    ...projectData,
+                    updatedAt: Date.now(),
+                    createdAt: projectData.createdAt || Date.now()
+                };
+
+                const projectRef = window.firebase.ref(
+                    window.firebase.db,
+                    `users/${userId}/projects/${projectId}`
+                );
+
+                if (isOnline && firebaseInitialized) {
+                    await window.firebase.set(projectRef, dataWithTimestamp);
+                    console.log(`✅ Project ${projectId} saved to Firebase`);
+                } else {
+                    // Add to offline queue
+                    queueOfflineOperation('set', `users/${userId}/projects/${projectId}`, dataWithTimestamp);
+                    console.log(`📦 Project ${projectId} queued for later sync`);
+                }
+            } catch (error) {
+                console.error(`❌ Failed to save project ${projectId}:`, error);
+                // Add to offline queue on failure
+                queueOfflineOperation('set', `users/${userId}/projects/${projectId}`, projectData);
+                throw error;
+            }
+        }
+
+        /**
+         * T018: Load all projects from Firebase
+         * 从 Firebase 加载所有项目
+         * @param {string} userId - User ID
+         * @returns {Promise<Array>} Array of projects
+         */
+        async function loadProjectsFromFirebase(userId) {
+            try {
+                console.log(`📥 Loading projects for user: ${userId}`);
+
+                const projectsRef = window.firebase.ref(
+                    window.firebase.db,
+                    `users/${userId}/projects`
+                );
+
+                const snapshot = await window.firebase.get(projectsRef);
+
+                if (snapshot.exists()) {
+                    const projectsObj = snapshot.val();
+                    const projectsArray = Object.values(projectsObj);
+                    console.log(`✅ Loaded ${projectsArray.length} projects from Firebase`);
+
+                    // Update local projects array
+                    projects = projectsArray;
+                    renderAllViews();
+
+                    return projectsArray;
+                } else {
+                    console.log('ℹ️ No projects found in Firebase');
+
+                    // T026: Check for localStorage migration
+                    await migrateLocalStorageToFirebase(userId);
+
+                    return [];
+                }
+            } catch (error) {
+                console.error('❌ Failed to load projects:', error);
+                showToast('❌ 加载项目失败: ' + error.message, 'error');
+                return [];
+            }
+        }
+
+        /**
+         * T019: Update project in Firebase
+         * 更新 Firebase 中的项目
+         * @param {string} userId - User ID
+         * @param {string} projectId - Project ID
+         * @param {Object} updates - Partial updates
+         * @returns {Promise<void>}
+         */
+        async function updateProjectInFirebase(userId, projectId, updates) {
+            try {
+                // T025: Add timestamp
+                const updatesWithTimestamp = {
+                    ...updates,
+                    updatedAt: Date.now()
+                };
+
+                const projectRef = window.firebase.ref(
+                    window.firebase.db,
+                    `users/${userId}/projects/${projectId}`
+                );
+
+                if (isOnline && firebaseInitialized) {
+                    await window.firebase.update(projectRef, updatesWithTimestamp);
+                    console.log(`✅ Project ${projectId} updated in Firebase`);
+                } else {
+                    // Add to offline queue
+                    queueOfflineOperation('update', `users/${userId}/projects/${projectId}`, updatesWithTimestamp);
+                    console.log(`📦 Project ${projectId} update queued`);
+                }
+            } catch (error) {
+                console.error(`❌ Failed to update project ${projectId}:`, error);
+                // Add to offline queue on failure
+                queueOfflineOperation('update', `users/${userId}/projects/${projectId}`, updates);
+                throw error;
+            }
+        }
+
+        /**
+         * T020: Delete project from Firebase
+         * 从 Firebase 删除项目
+         * @param {string} userId - User ID
+         * @param {string} projectId - Project ID
+         * @returns {Promise<void>}
+         */
+        async function deleteProjectFromFirebase(userId, projectId) {
+            try {
+                const projectRef = window.firebase.ref(
+                    window.firebase.db,
+                    `users/${userId}/projects/${projectId}`
+                );
+
+                if (isOnline && firebaseInitialized) {
+                    await window.firebase.remove(projectRef);
+                    console.log(`✅ Project ${projectId} deleted from Firebase`);
+                } else {
+                    // Add to offline queue
+                    queueOfflineOperation('delete', `users/${userId}/projects/${projectId}`, null);
+                    console.log(`📦 Project ${projectId} deletion queued`);
+                }
+            } catch (error) {
+                console.error(`❌ Failed to delete project ${projectId}:`, error);
+                // Add to offline queue on failure
+                queueOfflineOperation('delete', `users/${userId}/projects/${projectId}`, null);
+                throw error;
+            }
+        }
+
+        /**
+         * Queue offline operation for later sync
+         * 将离线操作加入队列以便稍后同步
+         * @param {string} type - Operation type: 'set', 'update', or 'delete'
+         * @param {string} path - Firebase path
+         * @param {Object|null} data - Data to save
+         */
+        function queueOfflineOperation(type, path, data) {
+            const operation = {
+                id: `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                timestamp: new Date().toISOString(),
+                type,
+                path,
+                data,
+                retryCount: 0,
+                status: 'pending'
+            };
+
+            offlineQueue.push(operation);
+            saveOfflineQueue();
+
+            // T024: Exponential backoff - limit queue size
+            if (offlineQueue.length > 100) {
+                console.warn('⚠️ Offline queue exceeds 100 operations');
+                showToast('⚠️ 离线队列已满，部分操作可能丢失', 'warning');
+                offlineQueue = offlineQueue.slice(-100); // Keep last 100
+                saveOfflineQueue();
+            }
+
+            console.log(`📦 Operation ${operation.id} added to offline queue (${offlineQueue.length} total)`);
+        }
+
+        /**
+         * T026: Migrate localStorage data to Firebase
+         * 迁移 localStorage 数据到 Firebase
+         * @param {string} userId - User ID
+         * @returns {Promise<void>}
+         */
+        async function migrateLocalStorageToFirebase(userId) {
+            try {
+                // Check if localStorage has data
+                const localData = localStorage.getItem('speckit_projects');
+                if (!localData) {
+                    console.log('ℹ️ No localStorage data to migrate');
+                    return;
+                }
+
+                const localProjects = JSON.parse(localData);
+                if (!Array.isArray(localProjects) || localProjects.length === 0) {
+                    console.log('ℹ️ No valid projects in localStorage');
+                    return;
+                }
+
+                console.log(`📤 Found ${localProjects.length} projects in localStorage`);
+
+                // T027: Show conflict resolution modal
+                const shouldMigrate = await showMigrationModal(localProjects.length);
+                if (!shouldMigrate) {
+                    console.log('ℹ️ User cancelled migration');
+                    return;
+                }
+
+                // Migrate each project
+                let migrated = 0;
+                for (const project of localProjects) {
+                    try {
+                        const projectId = project.id || `project_${Date.now()}_${migrated}`;
+                        const projectData = {
+                            ...project,
+                            id: projectId,
+                            migratedAt: Date.now(),
+                            migratedFrom: 'localStorage'
+                        };
+
+                        await saveProjectToFirebase(userId, projectId, projectData);
+                        migrated++;
+                    } catch (error) {
+                        console.error('❌ Failed to migrate project:', error);
+                    }
+                }
+
+                if (migrated > 0) {
+                    console.log(`✅ Migrated ${migrated} projects from localStorage to Firebase`);
+                    showToast(`✅ 成功迁移 ${migrated} 个项目到云端`, 'success');
+
+                    // Reload projects
+                    await loadProjectsFromFirebase(userId);
+
+                    // Optionally clear localStorage
+                    if (confirm('迁移成功！是否清除本地存储的旧数据？')) {
+                        localStorage.removeItem('speckit_projects');
+                        console.log('✅ Cleared localStorage');
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Migration failed:', error);
+                showToast('❌ 数据迁移失败: ' + error.message, 'error');
+            }
+        }
+
+        /**
+         * T027: Show migration confirmation modal
+         * 显示迁移确认模态框
+         * @param {number} count - Number of projects to migrate
+         * @returns {Promise<boolean>} User's decision
+         */
+        function showMigrationModal(count) {
+            return new Promise((resolve) => {
+                const message = `检测到本地存储有 ${count} 个项目。\n是否迁移到云端？`;
+                const result = confirm(message);
+                resolve(result);
+            });
+        }
+
+        /**
+         * T028: Last-write-wins conflict resolution (implicit via timestamp)
+         * 最后写入获胜的冲突解决（通过时间戳隐式实现）
+         * Note: Firebase Realtime Database handles this automatically with our updatedAt timestamps
+         */
+
+        // ========================================
+        // Existing Project Data & State
+        // ========================================
+
+        // 项目数据存储
+        let projects = [];
+        let currentTab = 'overview';
+        let currentProjectId = null;
+        let currentIterationId = null;
+
+        // 命令步骤定义
+        const commandSteps = [
+            {
+                id: 'init-new',
+                phase: 'init',
+                stepNumber: '0',
+                title: '项目初始化',
+                subtitle: '新项目 (Greenfield)',
+                desc: '创建新目录并注入 Spec Kit 模板和脚本',
+                command: 'specify init',
+                hasInput: true,
+                inputPlaceholder: '输入项目名称',
+                hasNotes: true,
+                note: '💡 新项目必须指定项目名称，系统会自动创建目录'
+            },
+            {
+                id: 'init-existing',
+                phase: 'init',
+                stepNumber: '0',
+                title: '项目初始化',
+                subtitle: '现有项目 (Brownfield)',
+                desc: '在当前目录中合并 Spec Kit 配置',
+                command: 'specify init .',
+                hasInput: false,
+                hasNotes: true,
+                note: '💡 在已有项目根目录执行，会合并配置而不覆盖现有文件'
+            },
+            {
+                id: 'constitution',
+                phase: 'architecture',
+                stepNumber: 'I',
+                title: '定义架构 DNA',
+                subtitle: 'Constitution',
+                desc: '创建项目的治理原则、代码质量标准、测试要求和性能目标',
+                command: '/speckit.constitution',
+                hasInput: true,
+                hasNotes: true,
+                inputPlaceholder: '输入架构描述（可选）',
+                note: '⚠️ AI 代理必须遵守这些原则，违反将在 /plan 和 /implement 中标记为 CRITICAL'
+            },
+            {
+                id: 'specify',
+                phase: 'development',
+                stepNumber: 'II',
+                title: '定义规范',
+                subtitle: 'Specify (What/Why)',
+                desc: '描述功能的用户故事、业务需求和期望成果，不涉及技术栈',
+                command: '/speckit.specify',
+                hasInput: true,
+                hasNotes: true,
+                inputPlaceholder: '输入功能描述（可选）',
+                note: '✅ 自动创建 Git 分支（如 001-feature-name）和规范文件 specs/[branch]/spec.md'
+            },
+            {
+                id: 'clarify',
+                phase: 'development',
+                stepNumber: 'III',
+                title: '澄清需求',
+                subtitle: 'Clarify (可选)',
+                desc: '解决 spec.md 中的模糊点和 [NEEDS CLARIFICATION] 标记',
+                command: '/speckit.clarify',
+                hasInput: false,
+                hasNotes: true,
+                note: '💡 推荐使用，通过结构化问答（最多5个问题）细化需求，避免返工'
+            },
+            {
+                id: 'plan',
+                phase: 'development',
+                stepNumber: 'IV',
+                title: '制定计划',
+                subtitle: 'Plan (How/Tech Stack)',
+                desc: '明确技术栈、架构模式、性能约束和集成点',
+                command: '/speckit.plan',
+                hasInput: true,
+                hasNotes: true,
+                inputPlaceholder: '输入技术栈或约束（可选）',
+                note: '📁 生成 plan.md、data-model.md、research.md 和 contracts/ 等工件'
+            },
+            {
+                id: 'tasks',
+                phase: 'development',
+                stepNumber: 'V',
+                title: '任务分解',
+                subtitle: 'Tasks',
+                desc: '将计划分解为可执行步骤（T001, T002...），按 TDD 模式排列',
+                command: '/speckit.tasks',
+                hasInput: false,
+                hasNotes: true,
+                note: '📝 生成 tasks.md，包含执行顺序和并行标记 [P]'
+            },
+            {
+                id: 'analyze',
+                phase: 'development',
+                stepNumber: 'VI',
+                title: '一致性分析',
+                subtitle: 'Analyze (可选)',
+                desc: '非破坏性检查 spec/plan/tasks 是否与 constitution.md 一致',
+                command: '/speckit.analyze',
+                hasInput: false,
+                hasNotes: true,
+                note: '🔍 发现矛盾或违反架构原则时报告 CRITICAL 警告'
+            },
+            {
+                id: 'implement',
+                phase: 'development',
+                stepNumber: 'VII',
+                title: '实施执行',
+                subtitle: 'Implement',
+                desc: 'AI 根据 tasks.md 生成代码，建议分批执行（如 T001 to T005）',
+                command: '/speckit.implement',
+                hasInput: true,
+                hasNotes: true,
+                inputPlaceholder: '输入任务范围（如 T001 to T005）',
+                note: '🧪 遵循 TDD：先写失败测试，再实现功能使其通过'
+            },
+            {
+                id: 'repair',
+                phase: 'iteration',
+                stepNumber: 'VIII',
+                title: '迭代与修复',
+                subtitle: 'Error Feedback',
+                desc: '测试应用并解决运行时错误，持续改进代码质量',
+                command: '复制错误信息并粘贴给 AI 进行修复',
+                hasInput: false,
+                hasNotes: true,
+                note: '🐛 将错误信息粘贴给 AI，或手动更新 spec.md/plan.md 澄清指示'
+            },
+            {
+                id: 'merge',
+                phase: 'iteration',
+                stepNumber: 'IX',
+                title: '结束与循环',
+                subtitle: 'Merge & Next',
+                desc: '合并功能分支，开始下一个功能开发循环',
+                command: 'git merge',
+                hasInput: true,
+                hasNotes: true,
+                inputPlaceholder: '输入分支名称',
+                note: '♻️ 下一功能从步骤 II (/speckit.specify) 开始新循环'
+            }
+        ];
+
+        const phases = {
+            init: { title: '🎯 初始化阶段', icon: '🎯' },
+            architecture: { title: '🏛️ 架构约束阶段', icon: '🏛️' },
+            development: { title: '⚡ 功能开发阶段', icon: '⚡' },
+            iteration: { title: '🔄 迭代优化阶段', icon: '🔄' }
+        };
+
+        // 全局变量
+        let pendingImportData = null;
+        let expandedProjects = new Set(); // 记录展开的项目
+        let selectedProjectId = null;
+        let selectedIterationId = null;
+
+        // ============ Toast 通知系统 ============
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // ============ T045: Loading Overlay 加载状态 ============
+        function showLoading(message = '加载中...') {
+            const overlay = document.getElementById('loadingOverlay');
+            const text = document.getElementById('loadingText');
+            if (text) text.textContent = message;
+            if (overlay) overlay.classList.add('active');
+        }
+
+        function hideLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) overlay.classList.remove('active');
+        }
+
+        // ============ 导出功能 (T003, T004) ============
+        function generateExportData(projectIds = null) {
+            const exportProjects = projectIds
+                ? projects.filter(p => projectIds.includes(p.id))
+                : projects;
+
+            return {
+                version: '1.0',
+                exportDate: new Date().toISOString(),
+                projects: exportProjects
+            };
+        }
+
+        function exportAllProjects() {
+            if (projects.length === 0) {
+                showToast('没有可导出的项目数据', 'warning');
+                return;
+            }
+
+            const exportData = generateExportData();
+            const jsonString = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            const filename = `speckit-backup-${timestamp}.json`;
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast(`✅ 已导出 ${projects.length} 个项目`, 'success');
+        }
+
+        function exportProject(projectId) {
+            const project = projects.find(p => p.id === projectId);
+            if (!project) {
+                showToast('项目不存在', 'error');
+                return;
+            }
+
+            const exportData = generateExportData([projectId]);
+            const jsonString = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            const filename = `speckit-${project.name}-${timestamp}.json`;
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast(`✅ 已导出项目: ${project.name}`, 'success');
+        }
+
+        // ============ 导入功能 (T005, T006, T007, T008) ============
+        function openImportModal() {
+            document.getElementById('importModal').classList.add('active');
+            document.getElementById('importFileInput').value = '';
+            document.getElementById('importPreview').style.display = 'none';
+            document.getElementById('confirmImportBtn').disabled = true;
+            pendingImportData = null;
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').classList.remove('active');
+            pendingImportData = null;
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    const validation = validateProjectData(data);
+
+                    if (!validation.valid) {
+                        showToast(validation.error, 'error');
+                        document.getElementById('importPreview').style.display = 'none';
+                        document.getElementById('confirmImportBtn').disabled = true;
+                        return;
+                    }
+
+                    // 显示预览
+                    pendingImportData = validation.data;
+                    const totalIterations = pendingImportData.projects.reduce((sum, p) => sum + p.iterations.length, 0);
+
+                    document.getElementById('importPreviewContent').innerHTML = `
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div><strong>文件版本:</strong> ${pendingImportData.version}</div>
+                            <div><strong>导出时间:</strong> ${new Date(pendingImportData.exportDate).toLocaleString('zh-CN')}</div>
+                            <div><strong>包含项目:</strong> ${pendingImportData.projects.length} 个</div>
+                            <div><strong>包含迭代:</strong> ${totalIterations} 个</div>
+                            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                                <strong>项目列表:</strong>
+                                <ul style="margin-top: 6px; padding-left: 20px;">
+                                    ${pendingImportData.projects.map(p => `<li>${p.name} (${p.iterations.length} 个迭代)</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+
+                    document.getElementById('importPreview').style.display = 'block';
+                    document.getElementById('confirmImportBtn').disabled = false;
+                } catch (err) {
+                    showToast('文件格式错误: 无法解析 JSON', 'error');
+                    document.getElementById('importPreview').style.display = 'none';
+                    document.getElementById('confirmImportBtn').disabled = true;
+                }
+            };
+
+            reader.readAsText(file);
+        }
+
+        // 三层数据验证 (T006)
+        function validateProjectData(data) {
+            // 第一层: 基本格式验证
+            if (!data || typeof data !== 'object') {
+                return { valid: false, error: '数据格式错误: 不是有效的 JSON 对象' };
+            }
+
+            if (!data.version || !data.exportDate || !Array.isArray(data.projects)) {
+                return { valid: false, error: '数据格式错误: 缺少必需字段 (version, exportDate, projects)' };
+            }
+
+            // 第二层: 结构验证
+            for (const project of data.projects) {
+                if (!project.id || !project.name || !Array.isArray(project.iterations)) {
+                    return { valid: false, error: `项目数据不完整: ${project.name || '未命名项目'}` };
+                }
+
+                for (const iteration of project.iterations) {
+                    if (!iteration.id || !iteration.name) {
+                        return { valid: false, error: `迭代数据不完整: ${project.name}` };
+                    }
+                }
+            }
+
+            // 第三层: 自动修复缺失字段
+            const repairedData = JSON.parse(JSON.stringify(data));
+            repairedData.projects.forEach(project => {
+                if (!project.createdAt) {
+                    project.createdAt = new Date().toISOString();
+                }
+
+                project.iterations.forEach(iteration => {
+                    if (!iteration.createdAt) {
+                        iteration.createdAt = project.createdAt;
+                    }
+                    if (!iteration.completedSteps) {
+                        iteration.completedSteps = {};
+                    }
+                    if (!iteration.inputs) {
+                        iteration.inputs = {};
+                    }
+                    if (!iteration.notes) {
+                        iteration.notes = {};
+                    }
+                    if (!iteration.currentCycle) {
+                        iteration.currentCycle = 'init';
+                    }
+                    if (!iteration.cycleHistory) {
+                        iteration.cycleHistory = {};
+                    }
+                });
+            });
+
+            return { valid: true, data: repairedData };
+        }
+
+        // 导入确认 (T007, T008)
+        function confirmImport() {
+            if (!pendingImportData) {
+                showToast('没有待导入的数据', 'error');
+                return;
+            }
+
+            const mode = document.querySelector('input[name="importMode"]:checked').value;
+
+            if (mode === 'replace') {
+                if (!confirm('覆盖模式将清空所有现有数据，确定继续？')) {
+                    return;
+                }
+                // T008: 覆盖模式
+                projects = pendingImportData.projects;
+            } else {
+                // T007: 合并模式 - 处理 ID 冲突
+                const existingIds = new Set(projects.map(p => p.id));
+
+                pendingImportData.projects.forEach(importProject => {
+                    if (existingIds.has(importProject.id)) {
+                        // ID 冲突，重新生成 ID
+                        importProject.id = 'project_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+                        importProject.iterations.forEach(iteration => {
+                            iteration.id = 'iteration_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                        });
+                    }
+
+                    projects.push(importProject);
+                });
+            }
+
+            saveProjects();
+            closeImportModal();
+
+            // 重新选择第一个项目
+            if (projects.length > 0) {
+                selectedProjectId = projects[0].id;
+                selectedIterationId = projects[0].iterations[0]?.id || null;
+                expandedProjects.add(projects[0].id);
+            }
+
+            renderProjectTree();
+            renderMainContent();
+
+            const count = pendingImportData.projects.length;
+            showToast(`✅ 已成功导入 ${count} 个项目 (${mode === 'replace' ? '覆盖' : '合并'}模式)`, 'success');
+        }
+
+        // ============ 清空数据功能 (T009) ============
+        function openClearDataModal() {
+            document.getElementById('clearDataModal').classList.add('active');
+            document.getElementById('clearConfirmInput').value = '';
+        }
+
+        function closeClearDataModal() {
+            document.getElementById('clearDataModal').classList.remove('active');
+        }
+
+        function confirmClearData() {
+            const input = document.getElementById('clearConfirmInput').value;
+            if (input !== '确认删除') {
+                showToast('请输入正确的确认文本', 'warning');
+                return;
+            }
+
+            projects = [];
+            saveProjects();
+            closeClearDataModal();
+
+            // 重置选择状态
+            selectedProjectId = null;
+            selectedIterationId = null;
+            expandedProjects.clear();
+
+            renderProjectTree();
+            renderMainContent();
+
+            showToast('✅ 所有数据已清空', 'success');
+        }
+
+        // ============ 项目统计功能 (T010) ============
+        function calculateProjectStats(project) {
+            const totalSteps = commandSteps.length;
+            let totalCompleted = 0;
+            let cycleStats = {
+                'init': 0,
+                'cycle-1': 0,
+                'cycle-2': 0,
+                'cycle-3': 0,
+                'cycle-4': 0,
+                'cycle-5': 0,
+                'cycle-6': 0
+            };
+            let phaseStats = {
+                'init': { total: 0, completed: 0 },
+                'architecture': { total: 0, completed: 0 },
+                'development': { total: 0, completed: 0 },
+                'iteration': { total: 0, completed: 0 }
+            };
+
+            // 统计所有迭代的完成情况
+            project.iterations.forEach(iteration => {
+                // Defensive check
+                const completed = iteration.completedSteps
+                    ? Object.values(iteration.completedSteps).filter(v => v).length
+                    : 0;
+                totalCompleted += completed;
+
+                // 按循环颜色分组统计
+                if (iteration.cycleHistory) {
+                    Object.keys(iteration.cycleHistory).forEach(stepId => {
+                        const cycle = iteration.cycleHistory[stepId];
+                        if (cycleStats[cycle] !== undefined) {
+                            cycleStats[cycle]++;
+                        }
+                    });
+                }
+
+                // 按阶段统计
+                commandSteps.forEach(step => {
+                    phaseStats[step.phase].total++;
+                    if (iteration.completedSteps && iteration.completedSteps[step.id]) {
+                        phaseStats[step.phase].completed++;
+                    }
+                });
+            });
+
+            const totalPossibleSteps = totalSteps * project.iterations.length;
+            const completionPercentage = totalPossibleSteps > 0
+                ? Math.round((totalCompleted / totalPossibleSteps) * 100)
+                : 0;
+
+            return {
+                totalIterations: project.iterations.length,
+                totalCompleted,
+                totalPossibleSteps,
+                completionPercentage,
+                cycleStats,
+                phaseStats,
+                remainingSteps: totalPossibleSteps - totalCompleted
+            };
+        }
+
+        function formatRelativeTime(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffSec = Math.floor(diffMs / 1000);
+            const diffMin = Math.floor(diffSec / 60);
+            const diffHour = Math.floor(diffMin / 60);
+            const diffDay = Math.floor(diffHour / 24);
+            const diffWeek = Math.floor(diffDay / 7);
+            const diffMonth = Math.floor(diffDay / 30);
+            const diffYear = Math.floor(diffDay / 365);
+
+            if (diffYear > 0) return `${diffYear} 年前`;
+            if (diffMonth > 0) return `${diffMonth} 个月前`;
+            if (diffWeek > 0) return `${diffWeek} 周前`;
+            if (diffDay > 0) return `${diffDay} 天前`;
+            if (diffHour > 0) return `${diffHour} 小时前`;
+            if (diffMin > 0) return `${diffMin} 分钟前`;
+            return '刚刚';
+        }
+
+        function calculateIterationStats(iteration) {
+            const totalSteps = commandSteps.length;
+            // Defensive check
+            const completedSteps = iteration.completedSteps
+                ? Object.values(iteration.completedSteps).filter(v => v).length
+                : 0;
+            const percentage = Math.round((completedSteps / totalSteps) * 100);
+
+            // 按循环统计
+            const cycleBreakdown = {};
+            if (iteration.cycleHistory) {
+                Object.keys(iteration.cycleHistory).forEach(stepId => {
+                    const cycle = iteration.cycleHistory[stepId];
+                    cycleBreakdown[cycle] = (cycleBreakdown[cycle] || 0) + 1;
+                });
+            }
+
+            // 按阶段统计
+            const phaseBreakdown = {};
+            commandSteps.forEach(step => {
+                if (!phaseBreakdown[step.phase]) {
+                    phaseBreakdown[step.phase] = { completed: 0, total: 0 };
+                }
+                phaseBreakdown[step.phase].total++;
+                if (iteration.completedSteps && iteration.completedSteps[step.id]) {
+                    phaseBreakdown[step.phase].completed++;
+                }
+            });
+
+            return {
+                completedSteps,
+                totalSteps,
+                percentage,
+                cycleBreakdown,
+                phaseBreakdown,
+                remainingSteps: totalSteps - completedSteps
+            };
+        }
+
+        // ============ 渲染所有视图 (Hotfix) ============
+        function renderAllViews() {
+            renderProjectTree();
+            renderMainContent();
+        }
+
+        // ============ 项目树渲染 (T001, T002) ============
+        function renderProjectTree() {
+            const treeContainer = document.getElementById('projectTree');
+
+            if (projects.length === 0) {
+                treeContainer.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: #94a3b8;">
+                        <div style="font-size: 3rem; margin-bottom: 16px; opacity: 0.6;">📂</div>
+                        <div style="font-size: 0.9rem; line-height: 1.6;">
+                            暂无项目<br>
+                            点击上方按钮<br>
+                            创建新项目
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <div class="project-tree-header">
+                    <div class="project-tree-title">📁 项目列表</div>
+                </div>
+            `;
+
+            projects.forEach(project => {
+                const isExpanded = expandedProjects.has(project.id);
+                const isSelected = selectedProjectId === project.id && !selectedIterationId;
+
+                html += `
+                    <div class="project-tree-item">
+                        <div class="project-tree-node ${isSelected ? 'active' : ''}" onclick="selectProject('${project.id}')">
+                            <div class="expand-icon ${isExpanded ? 'expanded' : ''}" onclick="event.stopPropagation(); toggleProject('${project.id}')">
+                                ▶
+                            </div>
+                            <div class="project-tree-label" title="${project.name}">${project.name}</div>
+                        </div>
+                        <div class="project-tree-children ${isExpanded ? 'expanded' : ''}">
+                            ${renderIterationTreeNodes(project)}
+                        </div>
+                    </div>
+                `;
+            });
+
+            treeContainer.innerHTML = html;
+        }
+
+        /**
+         * T030: Render step indicators for iteration
+         * 为迭代渲染步骤指示器
+         * @param {Object} iteration - Iteration object
+         * @returns {string} HTML string with step indicators
+         */
+        function renderStepIndicators(iteration) {
+            return commandSteps.map(step => {
+                // Defensive checks
+                const isCompleted = iteration.completedSteps && iteration.completedSteps[step.id] === true;
+                const hasInput = iteration.inputs && iteration.inputs[step.id] && iteration.inputs[step.id].trim().length > 0;
+                const hasNotes = iteration.notes && iteration.notes[step.id] && iteration.notes[step.id].trim().length > 0;
+
+                // Build tooltip content (T033: Plain text for CSS attr tooltips)
+                let tooltipContent = `${step.stepNumber}. ${step.title}`;
+                if (hasInput) {
+                    const inputPreview = iteration.inputs[step.id].substring(0, 40);
+                    tooltipContent += `\n📝 ${inputPreview}${iteration.inputs[step.id].length > 40 ? '...' : ''}`;
+                }
+                if (hasNotes) {
+                    const notesPreview = iteration.notes[step.id].substring(0, 40);
+                    tooltipContent += `\n💡 ${notesPreview}${iteration.notes[step.id].length > 40 ? '...' : ''}`;
+                }
+
+                return `
+                    <span class="step-indicator ${isCompleted ? 'completed' : 'incomplete'}"
+                          data-step-id="${step.id}"
+                          data-tooltip="${tooltipContent.replace(/"/g, '&quot;')}"
+                          title="${step.stepNumber}. ${step.title}${isCompleted ? ' ✓' : ''}">
+                        ${isCompleted ? '✓' : '○'}
+                    </span>
+                `;
+            }).join('');
+        }
+
+        function renderIterationTreeNodes(project) {
+            return project.iterations.map(iteration => {
+                // Defensive check: ensure completedSteps exists
+                const completedSteps = iteration.completedSteps
+                    ? Object.values(iteration.completedSteps).filter(v => v).length
+                    : 0;
+                const isSelected = selectedProjectId === project.id && selectedIterationId === iteration.id;
+                const progressPercent = Math.round((completedSteps / commandSteps.length) * 100);
+
+                // T032: Highlight furthest iteration (most progress)
+                const allIterations = project.iterations;
+                const maxProgress = Math.max(...allIterations.map(it => {
+                    return it.completedSteps
+                        ? Object.values(it.completedSteps).filter(v => v).length
+                        : 0;
+                }));
+                const isFurthest = completedSteps === maxProgress && completedSteps > 0;
+
+                return `
+                    <div class="iteration-tree-node ${isSelected ? 'active' : ''} ${isFurthest ? 'furthest' : ''}"
+                         onclick="selectIteration('${project.id}', '${iteration.id}')">
+                        <div class="iteration-tree-label" title="${iteration.name}">${iteration.name}</div>
+                        <div class="iteration-tree-progress">
+                            <div class="iteration-progress-bar">
+                                <div class="iteration-progress-fill" style="width: ${progressPercent}%"></div>
+                            </div>
+                            <div class="iteration-tree-badge">${completedSteps}/${commandSteps.length}</div>
+                        </div>
+                        <div class="step-indicators-container">
+                            ${renderStepIndicators(iteration)}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleProject(projectId) {
+            if (expandedProjects.has(projectId)) {
+                expandedProjects.delete(projectId);
+            } else {
+                expandedProjects.add(projectId);
+            }
+            renderProjectTree();
+        }
+
+        function selectProject(projectId) {
+            selectedProjectId = projectId;
+            selectedIterationId = null;
+            renderProjectTree();
+            renderMainContent();
+        }
+
+        function selectIteration(projectId, iterationId) {
+            selectedProjectId = projectId;
+            selectedIterationId = iterationId;
+            // 确保项目展开
+            expandedProjects.add(projectId);
+            renderProjectTree();
+            renderMainContent();
+        }
+
+        // ============ 主内容区渲染 (T012) ============
+        function renderMainContent() {
+            const mainContent = document.getElementById('mainContent');
+
+            if (!selectedProjectId) {
+                // 显示欢迎页面
+                mainContent.innerHTML = renderWelcomePage();
+                return;
+            }
+
+            const project = projects.find(p => p.id === selectedProjectId);
+            if (!project) {
+                mainContent.innerHTML = '<div style="padding: 40px; text-align: center; color: #94a3b8;">项目不存在</div>';
+                return;
+            }
+
+            if (!selectedIterationId) {
+                // 显示项目概览
+                mainContent.innerHTML = renderProjectOverview(project);
+            } else {
+                // 显示迭代工作流
+                const iteration = project.iterations.find(i => i.id === selectedIterationId);
+                if (iteration) {
+                    mainContent.innerHTML = renderIterationWorkflow(project, iteration);
+                    // T039: Initialize auto-resize for input fields after rendering
+                    setTimeout(() => initAutoResizeInputs(), 50);
+                } else {
+                    mainContent.innerHTML = '<div style="padding: 40px; text-align: center; color: #94a3b8;">迭代不存在</div>';
+                }
+            }
+        }
+
+        function renderWelcomePage() {
+            const totalProjects = projects.length;
+            const totalIterations = projects.reduce((sum, p) => sum + p.iterations.length, 0);
+            let totalCompleted = 0;
+            let totalPossible = 0;
+
+            projects.forEach(project => {
+                project.iterations.forEach(iteration => {
+                    // Defensive check
+                    const completed = iteration.completedSteps
+                        ? Object.values(iteration.completedSteps).filter(v => v).length
+                        : 0;
+                    totalCompleted += completed;
+                    totalPossible += commandSteps.length;
+                });
+            });
+
+            const overallPercentage = totalPossible > 0 ? Math.round((totalCompleted / totalPossible) * 100) : 0;
+
+            return `
+                <div style="padding: 40px; text-align: center;">
+                    <div style="font-size: 4rem; margin-bottom: 24px;">🎯</div>
+                    <h2 style="font-size: 1.8rem; margin-bottom: 16px; color: #1e293b;">欢迎使用 Spec Kit 项目管理</h2>
+                    <p style="font-size: 1rem; color: #64748b; margin-bottom: 40px; line-height: 1.8;">
+                        规范驱动开发（SDD）完整工作流管理工具<br>
+                        点击左侧项目查看详情，或创建新项目开始使用
+                    </p>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; max-width: 800px; margin: 0 auto;">
+                        <div style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);">
+                            <div style="font-size: 2rem; font-weight: 700; margin-bottom: 8px;">${totalProjects}</div>
+                            <div style="font-size: 0.9rem; opacity: 0.9;">📁 项目总数</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);">
+                            <div style="font-size: 2rem; font-weight: 700; margin-bottom: 8px;">${totalIterations}</div>
+                            <div style="font-size: 0.9rem; opacity: 0.9;">🔄 迭代总数</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);">
+                            <div style="font-size: 2rem; font-weight: 700; margin-bottom: 8px;">${overallPercentage}%</div>
+                            <div style="font-size: 0.9rem; opacity: 0.9;">📊 总体进度</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderProjectOverview(project) {
+            const stats = calculateProjectStats(project);
+            const relativeTime = formatRelativeTime(project.createdAt);
+
+            return `
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #e5e7eb;">
+                        <div>
+                            <h2 style="font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-bottom: 8px;">📦 ${project.name}</h2>
+                            <div style="font-size: 0.85rem; color: #64748b;">创建于 ${relativeTime}</div>
+                        </div>
+                        <div style="display: flex; gap: 12px;">
+                            <button class="add-iteration-btn" onclick="openAddIterationModal('${project.id}')">➕ 新建迭代</button>
+                            <button class="delete-project-btn" onclick="deleteProject('${project.id}')">删除项目</button>
+                        </div>
+                    </div>
+
+                    <!-- 项目统计 -->
+                    <div style="background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 2px solid #e5e7eb;">
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 16px;">📊 项目统计</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                            <div>
+                                <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 8px;">总体进度</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: #2563eb;">${stats.completionPercentage}%</div>
+                                <div style="width: 100%; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; margin-top: 8px;">
+                                    <div style="width: ${stats.completionPercentage}%; height: 100%; background: linear-gradient(90deg, #2563eb, #10b981); transition: width 0.3s;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 8px;">已完成步骤</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">${stats.totalCompleted} / ${stats.totalPossibleSteps}</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 8px;">剩余步骤</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: #f59e0b;">${stats.remainingSteps}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 迭代列表 -->
+                    <div>
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 16px;">🔄 迭代列表 (${project.iterations.length} 个)</h3>
+                        <div style="display: grid; gap: 12px;">
+                            ${project.iterations.map(iteration => renderIterationCard(project, iteration)).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderIterationCard(project, iteration) {
+            // Defensive check
+            const completedSteps = iteration.completedSteps
+                ? Object.values(iteration.completedSteps).filter(v => v).length
+                : 0;
+            const percentage = Math.round((completedSteps / commandSteps.length) * 100);
+            const relativeTime = formatRelativeTime(iteration.createdAt);
+
+            return `
+                <div style="background: white; border: 2px solid #e5e7eb; border-radius: 12px; padding: 16px; transition: all 0.2s; cursor: pointer;"
+                     onclick="selectIteration('${project.id}', '${iteration.id}')"
+                     onmouseover="this.style.borderColor='#2563eb'; this.style.boxShadow='0 4px 12px rgba(37, 99, 235, 0.2)'"
+                     onmouseout="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                        <div style="flex: 1;">
+                            <h4 style="font-size: 1rem; font-weight: 600; color: #1e293b; margin-bottom: 4px;">${iteration.name}</h4>
+                            ${iteration.description ? `<p style="font-size: 0.8rem; color: #64748b; margin-bottom: 8px;">${iteration.description}</p>` : ''}
+                            <div style="font-size: 0.75rem; color: #94a3b8;">${relativeTime}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 1.2rem; font-weight: 700; color: #2563eb;">${percentage}%</div>
+                            <div style="font-size: 0.75rem; color: #64748b;">${completedSteps}/${commandSteps.length}</div>
+                        </div>
+                    </div>
+                    <div style="width: 100%; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;">
+                        <div style="width: ${percentage}%; height: 100%; background: linear-gradient(90deg, #2563eb, #10b981); transition: width 0.3s;"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 初始化
+        function init() {
+            loadProjects();
+            // 默认展开第一个项目并选中第一个迭代
+            if (projects.length > 0) {
+                selectedProjectId = projects[0].id;
+                expandedProjects.add(projects[0].id);
+                if (projects[0].iterations.length > 0) {
+                    selectedIterationId = projects[0].iterations[0].id;
+                }
+            }
+            renderProjectTree();
+            renderMainContent();
+        }
+
+        // 加载项目数据
+        function loadProjects() {
+            const saved = localStorage.getItem('speckit_projects');
+            if (saved) {
+                projects = JSON.parse(saved);
+                // 确保每个项目有迭代数据
+                projects.forEach(project => {
+                    if (!project.iterations) {
+                        project.iterations = [{
+                            id: 'iteration_' + Date.now(),
+                            name: '初始开发',
+                            description: '',
+                            createdAt: project.createdAt,
+                            completedSteps: project.completedSteps || {},
+                            inputs: project.inputs || {},
+                            notes: {},
+                            currentCycle: 'init',
+                            cycleHistory: {}
+                        }];
+                    }
+                    // 确保每个迭代有循环相关字段
+                    project.iterations.forEach(iteration => {
+                        if (!iteration.currentCycle) {
+                            iteration.currentCycle = 'init';
+                        }
+                        if (!iteration.cycleHistory) {
+                            iteration.cycleHistory = {};
+                        }
+                    });
+                });
+                saveProjects();
+            }
+        }
+
+        // 保存项目数据
+        /**
+         * T021: Save projects to both localStorage and Firebase (auto-save trigger)
+         * 保存项目到 localStorage 和 Firebase（自动保存触发器）
+         */
+        async function saveProjects() {
+            // Always save to localStorage first (offline backup)
+            localStorage.setItem('speckit_projects', JSON.stringify(projects));
+            console.log('💾 Saved to localStorage');
+
+            // If user is authenticated, also save to Firebase
+            if (currentUser && firebaseInitialized) {
+                try {
+                    // Save each project to Firebase
+                    for (const project of projects) {
+                        await saveProjectToFirebase(currentUser.uid, project.id, project);
+                    }
+                    console.log('☁️ All projects synced to Firebase');
+                } catch (error) {
+                    console.error('❌ Failed to sync to Firebase:', error);
+                    // Don't show error toast - offline queue will handle it
+                }
+            }
+        }
+
+
+        // 渲染迭代工作流
+        function renderIterationWorkflow(project, iteration) {
+            const stats = calculateIterationStats(iteration);
+
+            // 循环统计标签
+            const cycleLabels = {
+                'init': '初始化',
+                'cycle-1': '循环1',
+                'cycle-2': '循环2',
+                'cycle-3': '循环3',
+                'cycle-4': '循环4',
+                'cycle-5': '循环5',
+                'cycle-6': '循环6'
+            };
+
+            const cycleColors = {
+                'init': '#6b7280',
+                'cycle-1': '#3b82f6',
+                'cycle-2': '#ec4899',
+                'cycle-3': '#f59e0b',
+                'cycle-4': '#6366f1',
+                'cycle-5': '#14b8a6',
+                'cycle-6': '#f43f5e'
+            };
+
+            // 生成循环统计 HTML
+            const cycleStatsHtml = Object.keys(stats.cycleBreakdown)
+                .filter(cycle => stats.cycleBreakdown[cycle] > 0)
+                .map(cycle => `
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: rgba(255,255,255,0.8); border-radius: 6px; border: 2px solid ${cycleColors[cycle]};">
+                        <div style="width: 12px; height: 12px; border-radius: 50%; background: ${cycleColors[cycle]};"></div>
+                        <span style="font-size: 0.75rem; color: #1e293b; font-weight: 600;">${cycleLabels[cycle]}: ${stats.cycleBreakdown[cycle]} 步</span>
+                    </div>
+                `).join('');
+
+            // 生成阶段统计 HTML
+            const phaseLabels = {
+                'init': '🎯 初始化',
+                'architecture': '🏛️ 架构约束',
+                'development': '⚡ 功能开发',
+                'iteration': '🔄 迭代优化'
+            };
+
+            const phaseStatsHtml = Object.keys(stats.phaseBreakdown)
+                .map(phase => {
+                    const { completed, total } = stats.phaseBreakdown[phase];
+                    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+                    return `
+                        <div style="margin-bottom: 10px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span style="font-size: 0.75rem; color: #1e293b; font-weight: 600;">${phaseLabels[phase]}</span>
+                                <span style="font-size: 0.7rem; color: #64748b;">${completed}/${total}</span>
+                            </div>
+                            <div style="width: 100%; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;">
+                                <div style="width: ${percentage}%; height: 100%; background: linear-gradient(90deg, #2563eb, #10b981); transition: width 0.3s;"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            // 统计信息面板
+            const statsPanel = `
+                <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); border: 2px solid #e5e7eb;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 style="font-size: 1rem; font-weight: 700; color: #1e293b;">📈 迭代统计</h3>
+                        <div style="font-size: 1.1rem; font-weight: 700; color: #2563eb;">${stats.percentage}% 完成</div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <!-- 循环分布 -->
+                        <div>
+                            <div style="font-size: 0.85rem; font-weight: 600; color: #64748b; margin-bottom: 10px;">🎨 循环分布</div>
+                            ${cycleStatsHtml || '<div style="font-size: 0.75rem; color: #94a3b8;">暂无已完成步骤</div>'}
+                        </div>
+
+                        <!-- 阶段进度 -->
+                        <div>
+                            <div style="font-size: 0.85rem; font-weight: 600; color: #64748b; margin-bottom: 10px;">📊 阶段进度</div>
+                            ${phaseStatsHtml}
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 16px; padding-top: 16px; border-top: 2px solid #e5e7eb; display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span style="color: #64748b;">✅ 已完成: <strong style="color: #10b981;">${stats.completedSteps}</strong></span>
+                        <span style="color: #64748b;">📝 总步骤: <strong style="color: #1e293b;">${stats.totalSteps}</strong></span>
+                        <span style="color: #64748b;">⏳ 剩余: <strong style="color: #f59e0b;">${stats.remainingSteps}</strong></span>
+                    </div>
+                </div>
+            `;
+
+            // 循环选择器
+            let cycleSelector = `
+                <div class="cycle-selector">
+                    <div class="cycle-selector-title">当前循环颜色</div>
+                    <div class="cycle-options">
+                        <div class="cycle-option init ${iteration.currentCycle === 'init' ? 'active' : ''}"
+                             onclick="selectCycle('${project.id}', '${iteration.id}', 'init')">
+                            初始化（灰色）
+                        </div>
+                        <div class="cycle-option cycle-1 ${iteration.currentCycle === 'cycle-1' ? 'active' : ''}"
+                             onclick="selectCycle('${project.id}', '${iteration.id}', 'cycle-1')">
+                            循环1（蓝色）
+                        </div>
+                        <div class="cycle-option cycle-2 ${iteration.currentCycle === 'cycle-2' ? 'active' : ''}"
+                             onclick="selectCycle('${project.id}', '${iteration.id}', 'cycle-2')">
+                            循环2（粉色）
+                        </div>
+                        <div class="cycle-option cycle-3 ${iteration.currentCycle === 'cycle-3' ? 'active' : ''}"
+                             onclick="selectCycle('${project.id}', '${iteration.id}', 'cycle-3')">
+                            循环3（黄色）
+                        </div>
+                        <div class="cycle-option cycle-4 ${iteration.currentCycle === 'cycle-4' ? 'active' : ''}"
+                             onclick="selectCycle('${project.id}', '${iteration.id}', 'cycle-4')">
+                            循环4（靛蓝）
+                        </div>
+                        <div class="cycle-option cycle-5 ${iteration.currentCycle === 'cycle-5' ? 'active' : ''}"
+                             onclick="selectCycle('${project.id}', '${iteration.id}', 'cycle-5')">
+                            循环5（青色）
+                        </div>
+                        <div class="cycle-option cycle-6 ${iteration.currentCycle === 'cycle-6' ? 'active' : ''}"
+                             onclick="selectCycle('${project.id}', '${iteration.id}', 'cycle-6')">
+                            循环6（玫红）
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            let html = statsPanel + cycleSelector;
+            let currentPhase = '';
+            
+            commandSteps.forEach(step => {
+                if (step.phase !== currentPhase) {
+                    if (currentPhase !== '') {
+                        html += '</div>';
+                    }
+                    currentPhase = step.phase;
+                    html += `
+                        <div class="phase-header">
+                            <h2><span class="phase-icon">${phases[step.phase].icon}</span> ${phases[step.phase].title}</h2>
+                        </div>
+                        <div class="workflow">
+                    `;
+                }
+                
+                const isCompleted = iteration.completedSteps[step.id] || false;
+                const savedInput = iteration.inputs[step.id] || '';
+                const savedNotes = iteration.notes[step.id] || '';
+                
+                // 获取该步骤完成时的循环颜色
+                const stepCycle = iteration.cycleHistory[step.id] || iteration.currentCycle;
+                
+                // 特殊处理初始化阶段
+                let cycleClass = '';
+                if (isCompleted) {
+                    if (step.phase === 'init') {
+                        cycleClass = 'init-phase';
+                    } else {
+                        cycleClass = stepCycle;
+                    }
+                }
+                
+                html += `
+                    <div class="command-card ${isCompleted ? 'completed' : ''} ${cycleClass}" data-project="${project.id}" data-iteration="${iteration.id}" data-step="${step.id}">
+                        ${isCompleted ? '<div class="completed-badge">✓ 已完成</div>' : ''}
+                        <span class="step-number">${step.stepNumber}</span>
+                        <div class="command-title">${step.title}</div>
+                        <div class="command-subtitle">${step.subtitle}</div>
+                        <div class="command-desc">${step.desc}</div>
+                        <div class="command-box">${step.command}</div>
+                        ${step.hasInput ? `
+                            <textarea class="command-input"
+                                      placeholder="${step.inputPlaceholder}"
+                                      data-command="${step.command}"
+                                      rows="1"
+                                      oninput="autoResizeInput(this)"
+                                      onchange="saveInput('${project.id}', '${iteration.id}', '${step.id}', this.value)">${savedInput}</textarea>
+                        ` : ''}
+                        ${step.hasNotes ? `
+                            <textarea class="command-notes" 
+                                      placeholder="记录错误信息、问题或笔记..."
+                                      onchange="saveNotes('${project.id}', '${iteration.id}', '${step.id}', this.value)">${savedNotes}</textarea>
+                        ` : ''}
+                        <button class="copy-btn" onclick="copyCommandWithTracking('${project.id}', '${iteration.id}', '${step.id}', ${step.hasInput})">
+                            📋 复制命令
+                        </button>
+                        ${step.note ? `<div class="note">${step.note}</div>` : ''}
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            return html;
+        }
+
+
+        // 打开新建项目模态框
+        function openAddProjectModal() {
+            document.getElementById('addProjectModal').classList.add('active');
+            document.getElementById('newProjectName').value = '';
+            document.getElementById('newProjectName').focus();
+        }
+
+        // 关闭新建项目模态框
+        function closeAddProjectModal() {
+            document.getElementById('addProjectModal').classList.remove('active');
+        }
+
+        // 添加项目
+        function addProject() {
+            const name = document.getElementById('newProjectName').value.trim();
+            if (!name) {
+                alert('请输入项目名称');
+                return;
+            }
+
+            const project = {
+                id: 'project_' + Date.now(),
+                name: name,
+                createdAt: new Date().toISOString(),
+                iterations: [{
+                    id: 'iteration_' + Date.now(),
+                    name: '初始开发',
+                    description: '',
+                    createdAt: new Date().toISOString(),
+                    completedSteps: {},
+                    inputs: {},
+                    notes: {},
+                    currentCycle: 'init',
+                    cycleHistory: {}
+                }]
+            };
+
+            projects.push(project);
+            saveProjects();
+            closeAddProjectModal();
+
+            // 自动选中新建的项目
+            selectedProjectId = project.id;
+            selectedIterationId = project.iterations[0].id;
+            expandedProjects.add(project.id);
+
+            renderProjectTree();
+            renderMainContent();
+            showToast(`✅ 项目"${project.name}"已创建`, 'success');
+        }
+
+        // 删除项目
+        async function deleteProject(projectId) {
+            const project = projects.find(p => p.id === projectId);
+            if (!confirm(`确定要删除项目"${project.name}"吗？`)) {
+                return;
+            }
+
+            projects = projects.filter(p => p.id !== projectId);
+
+            // T021: Auto-save - Delete from Firebase
+            if (currentUser && firebaseInitialized) {
+                try {
+                    await deleteProjectFromFirebase(currentUser.uid, projectId);
+                } catch (error) {
+                    console.error('Failed to delete from Firebase:', error);
+                }
+            }
+
+            saveProjects();
+
+            // 如果删除的是当前选中的项目，重新选择
+            if (selectedProjectId === projectId) {
+                if (projects.length > 0) {
+                    selectedProjectId = projects[0].id;
+                    selectedIterationId = projects[0].iterations[0]?.id || null;
+                    expandedProjects.add(projects[0].id);
+                } else {
+                    selectedProjectId = null;
+                    selectedIterationId = null;
+                }
+            }
+
+            expandedProjects.delete(projectId);
+            renderProjectTree();
+            renderMainContent();
+            showToast(`✅ 已删除项目"${project.name}"`, 'success');
+        }
+
+        // 打开新建迭代模态框
+        function openAddIterationModal(projectId) {
+            currentProjectId = projectId;
+            document.getElementById('addIterationModal').classList.add('active');
+            document.getElementById('newIterationName').value = '';
+            document.getElementById('newIterationDesc').value = '';
+            document.getElementById('newIterationName').focus();
+        }
+
+        // 关闭新建迭代模态框
+        function closeAddIterationModal() {
+            document.getElementById('addIterationModal').classList.remove('active');
+        }
+
+        // 添加迭代
+        function addIteration() {
+            const name = document.getElementById('newIterationName').value.trim();
+            const description = document.getElementById('newIterationDesc').value.trim();
+            
+            if (!name) {
+                alert('请输入迭代名称');
+                return;
+            }
+            
+            const project = projects.find(p => p.id === currentProjectId);
+            if (!project) return;
+            
+            const iteration = {
+                id: 'iteration_' + Date.now(),
+                name: name,
+                description: description,
+                createdAt: new Date().toISOString(),
+                completedSteps: {},
+                inputs: {},
+                notes: {},
+                currentCycle: 'init',
+                cycleHistory: {}
+            };
+            
+            project.iterations.unshift(iteration);
+            saveProjects();
+            closeAddIterationModal();
+
+            // 自动选中新建的迭代
+            selectedProjectId = currentProjectId;
+            selectedIterationId = iteration.id;
+            expandedProjects.add(currentProjectId);
+
+            renderProjectTree();
+            renderMainContent();
+            showToast(`✅ 迭代"${iteration.name}"已创建`, 'success');
+        }
+
+        // 删除迭代 (从项目概览页调用时暂不支持，可从迭代树调用)
+        function deleteIteration(projectId, iterationId) {
+            const project = projects.find(p => p.id === projectId);
+            if (!project) return;
+
+            const iteration = project.iterations.find(i => i.id === iterationId);
+            if (!confirm(`确定要删除迭代"${iteration.name}"吗？`)) {
+                return;
+            }
+
+            if (project.iterations.length === 1) {
+                showToast('无法删除最后一个迭代', 'warning');
+                return;
+            }
+
+            project.iterations = project.iterations.filter(i => i.id !== iterationId);
+            saveProjects();
+
+            // 如果删除的是当前选中的迭代，选择第一个迭代
+            if (selectedIterationId === iterationId) {
+                selectedIterationId = project.iterations[0]?.id || null;
+            }
+
+            renderProjectTree();
+            renderMainContent();
+            showToast(`✅ 已删除迭代"${iteration.name}"`, 'success');
+        }
+
+        // 保存输入内容
+        function saveInput(projectId, iterationId, stepId, value) {
+            try {
+                const project = projects.find(p => p.id === projectId);
+                if (!project) return;
+
+                const iteration = project.iterations.find(i => i.id === iterationId);
+                if (!iteration) return;
+
+                // T043: Sanitize input before saving
+                iteration.inputs[stepId] = sanitizeInput(value);
+                saveProjects();
+            } catch (error) {
+                // T044: Log errors
+                logError(error, `saveInput(${projectId}, ${iterationId}, ${stepId})`);
+                showToast('保存输入失败，请重试', 'error');
+            }
+        }
+
+        // 保存笔记
+        function saveNotes(projectId, iterationId, stepId, value) {
+            try {
+                const project = projects.find(p => p.id === projectId);
+                if (!project) return;
+
+                const iteration = project.iterations.find(i => i.id === iterationId);
+                if (!iteration) return;
+
+                // T043: Sanitize notes before saving
+                iteration.notes[stepId] = sanitizeInput(value);
+                saveProjects();
+            } catch (error) {
+                // T044: Log errors
+                logError(error, `saveNotes(${projectId}, ${iterationId}, ${stepId})`);
+                showToast('保存备注失败，请重试', 'error');
+            }
+        }
+
+        // 选择循环颜色
+        function selectCycle(projectId, iterationId, cycle) {
+            const project = projects.find(p => p.id === projectId);
+            if (!project) return;
+
+            const iteration = project.iterations.find(i => i.id === iterationId);
+            if (!iteration) return;
+
+            iteration.currentCycle = cycle;
+            saveProjects();
+
+            // 重新渲染主内容区
+            renderMainContent();
+        }
+
+        /**
+         * T043: Input sanitization for XSS prevention
+         * 清理用户输入，防止 XSS 攻击
+         */
+        function sanitizeInput(input) {
+            if (typeof input !== 'string') return input;
+
+            // Escape HTML special characters
+            const div = document.createElement('div');
+            div.textContent = input;
+            return div.innerHTML;
+        }
+
+        /**
+         * T044: Error logging utility
+         * 错误日志记录
+         */
+        function logError(error, context = '') {
+            const errorLog = {
+                timestamp: new Date().toISOString(),
+                context: context,
+                message: error.message || String(error),
+                stack: error.stack || '',
+                userAgent: navigator.userAgent,
+                currentUser: currentUser ? currentUser.uid : 'anonymous'
+            };
+
+            console.error('🔴 Error Log:', errorLog);
+
+            // Store in localStorage for debugging (max 50 entries)
+            try {
+                let errorLogs = JSON.parse(localStorage.getItem('speckit_error_logs') || '[]');
+                errorLogs.unshift(errorLog);
+                errorLogs = errorLogs.slice(0, 50); // Keep only last 50 errors
+                localStorage.setItem('speckit_error_logs', JSON.stringify(errorLogs));
+            } catch (e) {
+                console.error('Failed to store error log:', e);
+            }
+
+            return errorLog;
+        }
+
+        /**
+         * T039: Auto-resize input fields based on content
+         * T041: Limit height to 5 lines with scrollbar
+         * T042: Detect code snippets and apply monospace font
+         * 自动调整输入框高度
+         */
+        function autoResizeInput(textarea) {
+            if (!textarea) return;
+
+            // Reset height to calculate new scrollHeight
+            textarea.style.height = 'auto';
+
+            // Calculate new height based on content
+            const newHeight = textarea.scrollHeight;
+            const lineHeight = 20; // Approximate line height in pixels
+            const maxLines = 5;
+            const maxHeight = lineHeight * maxLines;
+
+            // Apply height (T041: max 5 lines)
+            if (newHeight > maxHeight) {
+                textarea.style.height = `${maxHeight}px`;
+                textarea.style.overflowY = 'auto';
+            } else {
+                textarea.style.height = `${newHeight}px`;
+                textarea.style.overflowY = 'hidden';
+            }
+
+            // T042: Detect code snippets (contains /, {, }, [, ], <, > or starts with special chars)
+            const value = textarea.value;
+            const codePatterns = /[\/\{\}\[\]<>]|^[\$#>]|^\s{2,}/m;
+
+            if (codePatterns.test(value) || value.length > 50) {
+                textarea.classList.add('code-style');
+            } else {
+                textarea.classList.remove('code-style');
+            }
+        }
+
+        /**
+         * T039: Initialize auto-resize for all input fields
+         * 为所有输入框初始化自动调整
+         */
+        function initAutoResizeInputs() {
+            const inputs = document.querySelectorAll('.command-input');
+            inputs.forEach(input => {
+                autoResizeInput(input);
+
+                // Add event listeners for dynamic resizing
+                input.addEventListener('input', function() {
+                    autoResizeInput(this);
+                });
+
+                input.addEventListener('paste', function() {
+                    setTimeout(() => autoResizeInput(this), 10);
+                });
+            });
+        }
+
+        /**
+         * T035: Detect when Step IX (merge) is copied
+         * T036-T038: Offer to auto-complete all steps
+         * 检测步骤 IX 被复制，提供一键完成所有步骤选项
+         */
+        function detectStepIXCopy(projectId, iterationId) {
+            const project = projects.find(p => p.id === projectId);
+            if (!project) return;
+
+            const iteration = project.iterations.find(i => i.id === iterationId);
+            if (!iteration) return;
+
+            // Check how many steps are NOT completed yet
+            const allStepIds = commandSteps.map(s => s.id);
+            const incompleteSteps = allStepIds.filter(id => !iteration.completedSteps[id]);
+
+            // If user has already completed most steps manually, don't prompt
+            if (incompleteSteps.length <= 1) {
+                return; // Already done, or only Step IX itself
+            }
+
+            // Prompt user with confirmation
+            setTimeout(() => {
+                const confirmMsg = `🎉 检测到您已完成 Step IX（合并与循环）！\n\n是否自动标记所有前置步骤为已完成？\n\n这将标记 ${incompleteSteps.length - 1} 个未完成步骤。`;
+
+                if (confirm(confirmMsg)) {
+                    autoCompleteAllSteps(projectId, iterationId);
+                }
+            }, 500); // Delay to avoid blocking clipboard operation
+        }
+
+        /**
+         * T036: Auto-complete all steps when Step IX is copied
+         * T038: Idempotent - only marks incomplete steps
+         * 自动完成所有步骤（幂等操作）
+         */
+        function autoCompleteAllSteps(projectId, iterationId) {
+            const project = projects.find(p => p.id === projectId);
+            if (!project) return;
+
+            const iteration = project.iterations.find(i => i.id === iterationId);
+            if (!iteration) return;
+
+            let completedCount = 0;
+
+            // Mark all steps as completed (T038: idempotent)
+            commandSteps.forEach(step => {
+                if (!iteration.completedSteps[step.id]) {
+                    iteration.completedSteps[step.id] = true;
+
+                    // Record cycle color for completion
+                    if (step.phase === 'init') {
+                        iteration.cycleHistory[step.id] = 'init';
+                    } else {
+                        iteration.cycleHistory[step.id] = iteration.currentCycle;
+                    }
+
+                    completedCount++;
+                }
+            });
+
+            // Save and update UI
+            saveProjects();
+            renderProjectTree();
+            renderWorkflowArea(); // Refresh main area to show all completed badges
+
+            // T037: Visual notification (toast)
+            showToast(`✅ 批量完成：已自动标记 ${completedCount} 个步骤为已完成`, 'success');
+        }
+
+        // 复制命令并标记完成
+        function copyCommandWithTracking(projectId, iterationId, stepId, hasInput) {
+            const project = projects.find(p => p.id === projectId);
+            if (!project) return;
+            
+            const iteration = project.iterations.find(i => i.id === iterationId);
+            if (!iteration) return;
+            
+            const step = commandSteps.find(s => s.id === stepId);
+            let command = step.command;
+            
+            if (hasInput) {
+                const card = document.querySelector(`[data-project="${projectId}"][data-iteration="${iterationId}"][data-step="${stepId}"]`);
+                const input = card.querySelector('.command-input');
+                const inputValue = input.value.trim();
+                if (inputValue) {
+                    command = `${step.command} ${inputValue}`;
+                }
+            }
+            
+            navigator.clipboard.writeText(command).then(() => {
+                iteration.completedSteps[stepId] = true;
+                
+                // 记录完成时的循环颜色
+                const step = commandSteps.find(s => s.id === stepId);
+                if (step.phase === 'init') {
+                    iteration.cycleHistory[stepId] = 'init';
+                } else {
+                    iteration.cycleHistory[stepId] = iteration.currentCycle;
+                }
+
+                saveProjects();
+                renderProjectTree(); // T031: Real-time sidebar update when step completed
+
+                // T035: Detect Step IX copy (smart completion)
+                if (stepId === 'merge') {
+                    detectStepIXCopy(projectId, iterationId);
+                }
+
+                const card = document.querySelector(`[data-project="${projectId}"][data-iteration="${iterationId}"][data-step="${stepId}"]`);
+                
+                // 添加对应的循环颜色类
+                let cycleClass = step.phase === 'init' ? 'init-phase' : iteration.currentCycle;
+                card.classList.add('completed', cycleClass);
+                
+                if (!card.querySelector('.completed-badge')) {
+                    const badge = document.createElement('div');
+                    badge.className = 'completed-badge';
+                    badge.textContent = '✓ 已完成';
+                    card.appendChild(badge);
+                }
+                
+                const button = card.querySelector('.copy-btn');
+                const originalText = button.textContent;
+                button.textContent = '✅ 已复制！';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+
+                // 更新项目树显示进度
+                renderProjectTree();
+            }).catch(err => {
+                showToast('复制失败，请重试', 'error');
+            });
+        }
+
+        // 页面加载时初始化
+        init();
+
+        // 支持回车键
+        document.getElementById('newProjectName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') addProject();
+        });
+
+        document.getElementById('newIterationName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') addIteration();
+        });
+
+        // 点击模态框外部关闭
+        document.getElementById('addProjectModal').addEventListener('click', function(e) {
+            if (e.target === this) closeAddProjectModal();
+        });
+
+        document.getElementById('addIterationModal').addEventListener('click', function(e) {
+            if (e.target === this) closeAddIterationModal();
+        });
+
+        document.getElementById('importModal').addEventListener('click', function(e) {
+            if (e.target === this) closeImportModal();
+        });
+
+        document.getElementById('clearDataModal').addEventListener('click', function(e) {
+            if (e.target === this) closeClearDataModal();
+        });
+
+        // ========================================
+        // Initialize Firebase on page load
+        // ========================================
+        window.addEventListener('load', async () => {
+            console.log('🚀 Initializing Firebase...');
+            await initFirebase();
+
+            // If Firebase config is not set (placeholder values), show warning
+            if (firebaseConfig.apiKey === 'YOUR_API_KEY') {
+                console.warn('⚠️ Firebase config not set. Please update firebaseConfig in index.html');
+                console.warn('   See FIREBASE_SETUP.md for instructions');
+                showToast('⚠️ Firebase 未配置，请查看 FIREBASE_SETUP.md 文档', 'warning');
+            }
+        });
+
+        // Also listen for online/offline events
+        window.addEventListener('online', () => {
+            isOnline = true;
+            window.isOnline = true; // Sync to window for testing
+            console.log('🟢 Back online');
+            updateConnectionStatus();
+            processOfflineQueue();
+        });
+
+        window.addEventListener('offline', () => {
+            isOnline = false;
+            window.isOnline = false; // Sync to window for testing
+            console.log('🔴 Gone offline');
+            updateConnectionStatus();
+        });
+    </script>
+</body>
+</html>
