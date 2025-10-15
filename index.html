@@ -30,10 +30,14 @@
         }
 
         .header {
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             color: white;
             margin-bottom: 30px;
             animation: fadeInDown 0.6s ease-out;
+            gap: 20px;
+            flex-wrap: wrap;
         }
 
         @keyframes fadeInDown {
@@ -45,6 +49,18 @@
                 opacity: 1;
                 transform: translateY(0);
             }
+        }
+
+        .header-left {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
         }
 
         .header h1 {
@@ -1988,6 +2004,87 @@
             background: #dc2626;
             transform: translateY(-1px);
         }
+
+        /* Connection Status & Inline User Info */
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: white;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.offline {
+            background: #ef4444;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .status-text {
+            font-weight: 500;
+        }
+
+        .user-info-inline {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .user-info-inline.show {
+            display: flex;
+        }
+
+        .user-email-inline {
+            color: white;
+            font-weight: 600;
+        }
+
+        .logout-btn-inline {
+            padding: 5px 12px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .logout-btn-inline:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        /* Hide old floating user info */
+        .user-info {
+            display: none !important;
+        }
     </style>
 
     <!-- Firebase SDK v12.4.0 (Modular ES Modules via CDN) -->
@@ -2115,8 +2212,20 @@
 
     <div class="container" id="mainApp">
         <div class="header">
-            <h1>🚀 Spec Kit 项目管理面板</h1>
-            <p>规范驱动开发（SDD）完整工作流</p>
+            <div class="header-left">
+                <h1>🚀 Spec Kit 项目管理面板</h1>
+                <p>规范驱动开发（SDD）完整工作流</p>
+            </div>
+            <div class="header-right">
+                <div class="connection-status" id="connectionStatus">
+                    <span class="status-dot"></span>
+                    <span class="status-text">连接中...</span>
+                </div>
+                <div class="user-info-inline" id="userInfoInline">
+                    <span class="user-email-inline" id="userEmailInline"></span>
+                    <button class="logout-btn-inline" onclick="handleLogout()">登出</button>
+                </div>
+            </div>
         </div>
 
         <!-- 工具栏 -->
@@ -2352,11 +2461,7 @@
          * Update connection status indicator
          * 更新连接状态指示器
          */
-        function updateConnectionStatus() {
-            const statusText = isOnline ? '🟢 在线' : '🔴 离线';
-            console.log('Connection status:', statusText);
-            // Update UI indicator (will be implemented in auth UI)
-        }
+        // Connection status update moved to line 2794 (consolidated duplicate)
 
         /**
          * Load offline queue from localStorage
@@ -2550,11 +2655,11 @@
         function showAuthUI() {
             const authOverlay = document.getElementById('authOverlay');
             const mainApp = document.getElementById('mainApp');
-            const userInfo = document.getElementById('userInfo');
+            const userInfoInline = document.getElementById('userInfoInline');
 
             authOverlay.classList.remove('hidden');
             if (mainApp) mainApp.style.display = 'none';
-            userInfo.classList.remove('show');
+            if (userInfoInline) userInfoInline.classList.remove('show');
 
             console.log('🔓 Showing authentication UI');
         }
@@ -2566,19 +2671,19 @@
         function hideAuthUI() {
             const authOverlay = document.getElementById('authOverlay');
             const mainApp = document.getElementById('mainApp');
-            const userInfo = document.getElementById('userInfo');
-            const userEmail = document.getElementById('userEmail');
+            const userInfoInline = document.getElementById('userInfoInline');
+            const userEmailInline = document.getElementById('userEmailInline');
 
             authOverlay.classList.add('hidden');
             if (mainApp) mainApp.style.display = 'block';
 
-            // Show user info
-            if (currentUser && userEmail) {
-                userEmail.textContent = currentUser.email;
-                userInfo.classList.add('show');
+            // Show inline user info in header
+            if (currentUser && userEmailInline && userInfoInline) {
+                userEmailInline.textContent = currentUser.email;
+                userInfoInline.classList.add('show');
             }
 
-            console.log('🔓 Hiding authentication UI');
+            console.log('🔓 Hiding authentication UI, showing user:', currentUser?.email);
         }
 
         /**
@@ -2684,24 +2789,22 @@
          */
         function updateConnectionStatus() {
             const statusEl = document.getElementById('connectionStatus');
-            const iconEl = document.getElementById('connectionIcon');
-            const textEl = document.getElementById('connectionText');
+            const dotEl = statusEl?.querySelector('.status-dot');
+            const textEl = statusEl?.querySelector('.status-text');
 
-            if (!statusEl) return;
+            if (!statusEl || !dotEl || !textEl) return;
 
             statusEl.style.display = 'flex';
 
             if (isOnline) {
-                statusEl.classList.remove('offline');
-                statusEl.classList.add('online');
-                iconEl.textContent = '🟢';
+                dotEl.classList.remove('offline');
                 textEl.textContent = '在线';
             } else {
-                statusEl.classList.remove('online');
-                statusEl.classList.add('offline');
-                iconEl.textContent = '🔴';
+                dotEl.classList.add('offline');
                 textEl.textContent = '离线';
             }
+
+            console.log('Connection status updated:', isOnline ? '🟢 在线' : '🔴 离线');
         }
 
         // ========================================
