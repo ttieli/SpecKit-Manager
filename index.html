@@ -2792,19 +2792,43 @@
             const dotEl = statusEl?.querySelector('.status-dot');
             const textEl = statusEl?.querySelector('.status-text');
 
-            if (!statusEl || !dotEl || !textEl) return;
+            console.log('🔍 updateConnectionStatus called:', {
+                isOnline,
+                hasStatusEl: !!statusEl,
+                hasDotEl: !!dotEl,
+                hasTextEl: !!textEl
+            });
+
+            if (!statusEl) {
+                console.warn('⚠️ connectionStatus element not found');
+                return;
+            }
+            if (!dotEl) {
+                console.warn('⚠️ status-dot element not found');
+                return;
+            }
+            if (!textEl) {
+                console.warn('⚠️ status-text element not found');
+                return;
+            }
 
             statusEl.style.display = 'flex';
 
-            if (isOnline) {
+            // Handle three states: online (true), offline (false), unknown (undefined)
+            if (isOnline === true) {
                 dotEl.classList.remove('offline');
                 textEl.textContent = '在线';
-            } else {
+                console.log('✅ Connection status: 🟢 在线');
+            } else if (isOnline === false) {
                 dotEl.classList.add('offline');
                 textEl.textContent = '离线';
+                console.log('⚠️ Connection status: 🔴 离线');
+            } else {
+                // isOnline is undefined/null - still connecting
+                dotEl.classList.remove('offline');
+                textEl.textContent = '连接中...';
+                console.log('⏳ Connection status: 🔄 连接中...');
             }
-
-            console.log('Connection status updated:', isOnline ? '🟢 在线' : '🔴 离线');
         }
 
         // ========================================
@@ -4728,7 +4752,14 @@
         // ========================================
         window.addEventListener('load', async () => {
             console.log('🚀 Initializing Firebase...');
+
+            // Initial connection status display
+            updateConnectionStatus();
+
             await initFirebase();
+
+            // Update connection status after Firebase initialization
+            updateConnectionStatus();
 
             // If Firebase config is not set (placeholder values), show warning
             if (firebaseConfig.apiKey === 'YOUR_API_KEY') {
