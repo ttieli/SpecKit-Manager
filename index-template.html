@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase App - GitHub Pages Template</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-weight: 600;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        code {
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Firebase + GitHub Pages Template</h1>
+
+        <div id="status" class="status info">
+            Initializing Firebase...
+        </div>
+
+        <div id="config-display"></div>
+
+        <p><strong>Instructions:</strong></p>
+        <ol>
+            <li>This template uses Firebase configuration placeholders</li>
+            <li>Use GitHub Actions or manual deployment script to inject actual values</li>
+            <li>Once deployed, this page will show Firebase connection status</li>
+        </ol>
+    </div>
+
+    <!-- Firebase SDK (v10.7.1 - modular) -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase configuration with placeholders
+        // These will be replaced during deployment by GitHub Actions or manual script
+        const firebaseConfig = {
+            apiKey: "FIREBASE_API_KEY_PLACEHOLDER",
+            authDomain: "FIREBASE_AUTH_DOMAIN_PLACEHOLDER",
+            projectId: "FIREBASE_PROJECT_ID_PLACEHOLDER",
+            storageBucket: "FIREBASE_STORAGE_BUCKET_PLACEHOLDER",
+            messagingSenderId: "FIREBASE_MESSAGING_SENDER_ID_PLACEHOLDER",
+            appId: "FIREBASE_APP_ID_PLACEHOLDER"
+        };
+
+        // Get DOM elements
+        const statusDiv = document.getElementById('status');
+        const configDiv = document.getElementById('config-display');
+
+        try {
+            // Check if placeholders are still present
+            if (firebaseConfig.apiKey.includes('PLACEHOLDER')) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `
+                    <strong>Configuration Not Injected</strong><br>
+                    Firebase placeholders detected. This is normal if you're viewing the source file.<br>
+                    To deploy: Use GitHub Actions workflow or run ./deploy-manual.sh
+                `;
+
+                configDiv.innerHTML = `
+                    <h3>Deployment Options:</h3>
+                    <p><strong>Option 1: GitHub Actions (Recommended)</strong></p>
+                    <pre><code># 1. Add secrets to GitHub repo (Settings > Secrets)
+# 2. Enable workflow: .github/workflows/deploy-simple.yml
+# 3. Push to main branch
+git push origin main</code></pre>
+
+                    <p><strong>Option 2: Manual Deployment</strong></p>
+                    <pre><code># 1. Create .env file (see .env.example)
+# 2. Run deployment script
+./deploy-manual.sh</code></pre>
+                `;
+                throw new Error('Placeholders not replaced');
+            }
+
+            // Initialize Firebase
+            const app = initializeApp(firebaseConfig);
+            console.log('Firebase initialized:', app.name);
+
+            // Update status
+            statusDiv.className = 'status success';
+            statusDiv.innerHTML = `
+                <strong>✓ Firebase Connected Successfully</strong><br>
+                Project ID: ${firebaseConfig.projectId}<br>
+                App Name: ${app.name}
+            `;
+
+            // Display sanitized config (hide full API key)
+            const sanitizedApiKey = firebaseConfig.apiKey.slice(0, 10) + '...' + firebaseConfig.apiKey.slice(-4);
+            configDiv.innerHTML = `
+                <h3>Firebase Configuration:</h3>
+                <pre><code>${JSON.stringify({
+                    ...firebaseConfig,
+                    apiKey: sanitizedApiKey
+                }, null, 2)}</code></pre>
+                <p><em>Note: API key is partially hidden for display. Full key is in use.</em></p>
+            `;
+
+            // Optional: Test Firestore connection
+            try {
+                const db = getFirestore(app);
+                console.log('Firestore initialized');
+            } catch (firestoreError) {
+                console.warn('Firestore not enabled or accessible:', firestoreError.message);
+            }
+
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+
+            if (!firebaseConfig.apiKey.includes('PLACEHOLDER')) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `
+                    <strong>Firebase Initialization Failed</strong><br>
+                    ${error.message}<br>
+                    Check browser console for details.
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
