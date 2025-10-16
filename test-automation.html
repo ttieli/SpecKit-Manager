@@ -783,6 +783,18 @@
                 }
             ];
 
+            // Cloud-First Sync Tests (Feature 005)
+            const syncTests = [
+                {
+                    name: '[SYNC] Placeholder - tests will be added during implementation',
+                    fn: async () => {
+                        log('info', 'Sync test section created, awaiting test implementation');
+                        // Tests T025, T053-T057 will be added here
+                    },
+                    category: 'sync'
+                }
+            ];
+
             // Collect all tests
             const allTests = [
                 ...phase1Tests,
@@ -790,7 +802,8 @@
                 ...phase3Tests,
                 ...phase4Tests,
                 ...uiTests,
-                ...cycleManagementTests
+                ...cycleManagementTests,
+                ...syncTests
             ];
 
             totalTests = allTests.length;
