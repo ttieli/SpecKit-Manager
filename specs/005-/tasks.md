@@ -83,9 +83,9 @@
 
 ### Schema Migration (T017-T019)
 
-- [ ] T017 [US1] Update migrateProjectSchema() to add lastModified: 0 and needsTimestampUpdate: true for old projects in index.html (~line 2800-2850)
-- [ ] T018 [P] [US1] Add timestampValidate() function to validate timestamp is number, >0, not future in index.html (Business Logic Layer ~line 4600)
-- [ ] T019 [US1] Test migration: Load old project, verify lastModified: 0 added
+- [X] T017 [US1] Update migrateProjectSchema() to add lastModified: 0 and needsTimestampUpdate: true for old projects in index.html (~line 2800-2850)
+- [X] T018 [P] [US1] Add timestampValidate() function to validate timestamp is number, >0, not future in index.html (Business Logic Layer ~line 4600)
+- [~] T019 [US1] MANUAL TEST: Load old project, verify lastModified: 0 added
 
 **Validation**:
 - Old projects get lastModified: 0, needsTimestampUpdate: true
@@ -93,9 +93,9 @@
 
 ### Server Timestamp Integration (T020-T022)
 
-- [ ] T020 [US1] Modify saveProjectToFirebase() to use firebase.database.ServerValue.TIMESTAMP in index.html (Data Access Layer ~line 3270)
-- [ ] T021 [US1] Add logic to remove needsTimestampUpdate flag after setting timestamp in saveProjectToFirebase()
-- [ ] T022 [US1] Test server timestamp: Save project, check Firebase Console for numeric timestamp
+- [X] T020 [US1] Modify saveProjectToFirebase() to use firebase.database.ServerValue.TIMESTAMP in index.html (Data Access Layer ~line 3270)
+- [X] T021 [US1] Add logic to remove needsTimestampUpdate flag after setting timestamp in saveProjectToFirebase()
+- [~] T022 [US1] MANUAL TEST: Save project, check Firebase Console for numeric timestamp
 
 **Validation**:
 - Firebase Console shows lastModified as number (milliseconds since epoch)
@@ -103,8 +103,8 @@
 
 ### Timestamp Comparison (T023-T025)
 
-- [ ] T023 [P] [US1] Implement timestampCompare(cloudTime, localTime) function returning -1/0/1 in index.html (Business Logic Layer ~line 4600)
-- [ ] T024 [P] [US1] Add null/undefined handling: treat missing timestamp as 0 in timestampCompare()
+- [X] T023 [P] [US1] Implement timestampCompare(cloudTime, localTime) function returning -1/0/1 in index.html (Business Logic Layer ~line 4600)
+- [X] T024 [P] [US1] Add null/undefined handling: treat missing timestamp as 0 in timestampCompare()
 - [ ] T025 [US1] Add unit tests for timestampCompare() in test-automation.html: (1000, 500) → 1, (500, 1000) → -1, (null, null) → 0
 
 **Validation**:
@@ -113,13 +113,13 @@
 
 ### Conflict Resolution Core (T026-T029)
 
-- [ ] T026 [US1] Implement conflictResolveProjects(cloudProjects[], localProjects[]) in index.html (Business Logic Layer ~line 4700)
+- [X] T026 [US1] Implement conflictResolveProjects(cloudProjects[], localProjects[]) in index.html (Business Logic Layer ~line 4700)
   - Create cloudMap and localMap by ID
   - For each ID: compare timestamps, use newer version (if timestamps equal, use cloud version as tie-breaker)
   - Return merged array
-- [ ] T027 [US1] Modify loadProjects() to call conflictResolveProjects() instead of merge logic in index.html (~line 4666)
-- [ ] T028 [US1] Update loadProjects() to save merged result back to localStorage after conflict resolution
-- [ ] T029 [US1] Test cross-browser: Delete project in Browser A, reload Browser B, verify deletion reflected
+- [X] T027 [US1] Modify loadProjectsFromFirebase() to call conflictResolveProjects() instead of simple assignment
+- [X] T028 [US1] Update loadProjectsFromFirebase() to save merged result back to localStorage after conflict resolution
+- [~] T029 [US1] MANUAL TEST: Delete project in Browser A, reload Browser B, verify deletion reflected
 
 **Validation**:
 - Deleted projects stay deleted across browsers
@@ -140,12 +140,9 @@
 
 ### Timestamp-Based Merge Logic (T030-T032)
 
-- [ ] T030 [US2] Add validation in conflictResolveProjects(): if cloudTime > localTime, use cloud; if localTime > cloudTime, use local; if tie, use cloud
-- [ ] T031 [US2] Add console logging in conflictResolveProjects() showing which version wins: "🔄 Conflict resolution: ${cloudWins} cloud wins, ${localWins} local wins"
-- [ ] T032 [US2] Test conflict scenarios:
-  - Cloud newer: cloudProject.lastModified = 2000, localProject.lastModified = 1000 → cloud wins
-  - Local newer: cloudProject.lastModified = 1000, localProject.lastModified = 2000 → local wins
-  - Tie: both 1000 → cloud wins
+- [X] T030 [US2] Add validation in conflictResolveProjects(): if cloudTime > localTime, use cloud; if localTime > cloudTime, use local; if tie, use cloud
+- [X] T031 [US2] Add console logging in conflictResolveProjects() showing which version wins: "🔄 Conflict resolution: ${cloudWins} cloud wins, ${localWins} local wins"
+- [~] T032 [US2] MANUAL TEST: Conflict scenarios (cloud newer, local newer, tie)
 
 **Validation**:
 - Conflict resolution logic correct
@@ -154,11 +151,8 @@
 
 ### Missing Timestamp Handling (T033-T034)
 
-- [ ] T033 [P] [US2] Update conflictResolveProjects() to handle missing lastModified: treat as 0 (oldest)
-- [ ] T034 [US2] Test missing timestamp scenarios:
-  - Cloud has timestamp, local missing → cloud wins
-  - Local has timestamp, cloud missing → local wins
-  - Both missing → cloud wins (tie-breaker)
+- [X] T033 [P] [US2] Update conflictResolveProjects() to handle missing lastModified: treat as 0 (oldest) - ALREADY IMPLEMENTED in timestampCompare()
+- [~] T034 [US2] MANUAL TEST: Missing timestamp scenarios
 
 **Validation**:
 - Missing timestamp treated as epoch 0

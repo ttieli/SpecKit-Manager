@@ -3316,6 +3316,7 @@
             try {
                 console.log(`📥 Loading projects for user: ${userId}`);
 
+                // T027: Load from both Firebase and localStorage for conflict resolution
                 const projectsRef = window.firebase.ref(
                     window.firebase.db,
                     `users/${userId}/projects`
@@ -3325,16 +3326,30 @@
 
                 if (snapshot.exists()) {
                     const projectsObj = snapshot.val();
-                    const projectsArray = Object.values(projectsObj);
-                    console.log(`✅ Loaded ${projectsArray.length} projects from Firebase`);
+                    let cloudProjects = Object.values(projectsObj);
+                    console.log(`✅ Loaded ${cloudProjects.length} projects from Firebase`);
 
-                    // BUGFIX: Migrate project schema for backward compatibility
-                    // Ensure all projects have required fields (description, updatedAt)
-                    // and all iterations have required fields (completedSteps, inputs, notes, etc.)
-                    projects = projectsArray.map(migrateProjectSchema);
+                    // Migrate cloud projects
+                    cloudProjects = cloudProjects.map(migrateProjectSchema);
+
+                    // T027: Load local projects from localStorage
+                    const saved = localStorage.getItem('speckit_projects');
+                    let localProjects = [];
+                    if (saved) {
+                        localProjects = JSON.parse(saved).map(migrateProjectSchema);
+                        console.log(`💾 Loaded ${localProjects.length} projects from localStorage`);
+                    }
+
+                    // T027: Use cloud-first conflict resolution
+                    projects = conflictResolveProjects(cloudProjects, localProjects);
+
+                    // T028: Save merged result back to localStorage (cloud authority)
+                    localStorage.setItem('speckit_projects', JSON.stringify(projects));
+                    console.log(`🔄 Merged and saved ${projects.length} projects to localStorage`);
+
                     renderAllViews();
 
-                    return projects; // Return migrated projects
+                    return projects; // Return merged projects
                 } else {
                     console.log('ℹ️ No projects found in Firebase');
 
@@ -4779,16 +4794,20 @@
                 const localProj = localMap[id];
 
                 if (cloudProj && localProj) {
-                    // Both exist - compare timestamps
+                    // T030: Both exist - compare timestamps with explicit tie-breaking
                     const cmp = timestampCompare(cloudProj.lastModified, localProj.lastModified);
-                    if (cmp >= 0) {
-                        // Cloud is newer or equal (tie goes to cloud)
+                    if (cmp > 0) {
+                        // Cloud is newer
                         merged.push(cloudProj);
                         cloudWins++;
-                    } else {
+                    } else if (cmp < 0) {
                         // Local is newer (pending sync)
                         merged.push(localProj);
                         localWins++;
+                    } else {
+                        // T030: Tie (equal timestamps) - use cloud as tie-breaker
+                        merged.push(cloudProj);
+                        cloudWins++;
                     }
                 } else if (cloudProj) {
                     // Only in cloud
@@ -4799,6 +4818,7 @@
                 }
             }
 
+            // T031: Log conflict resolution stats
             console.log(`🔄 Conflict resolution: ${cloudWins} cloud wins, ${localWins} local wins`);
             return merged;
         }
