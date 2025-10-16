@@ -57,6 +57,8 @@ description: "Task list template for feature implementation"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
+### Foundational Infrastructure Tasks
+
 Examples of foundational tasks (adjust based on your project):
 
 - [ ] T004 Setup database schema and migrations framework
@@ -65,6 +67,39 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T007 Create base models/entities that all stories depend on
 - [ ] T008 Configure error handling and logging infrastructure
 - [ ] T009 Setup environment configuration management
+
+### Module Boundary Setup *(新增 / NEW - Constitution Principle VI)*
+
+**Purpose**: Establish module boundaries and enforce modularity mandate
+
+- [ ] T010 [P] [MODULE] Define module interfaces in plan.md Module Boundary Definition section
+- [ ] T011 [P] [MODULE] Create module directory structure (if multi-file) or establish function naming conventions (if single-file)
+- [ ] T012 [P] [MODULE] Setup module isolation tests (verify no circular dependencies)
+- [ ] T013 [MODULE] Implement module dependency injection pattern (if applicable)
+- [ ] T014 [MODULE] Add JSDoc/TypeDoc comments for all module interfaces
+
+**Single-File Architecture Adaptation**:
+- [ ] T010-SF [P] [MODULE] Define function group boundaries (auth*, data*, render*, validate*) in plan.md
+- [ ] T011-SF [P] [MODULE] Add section comment headers in index.html for each function group
+- [ ] T012-SF [MODULE] Setup test sections for each function group in test-automation.html
+
+### Separation of Concerns Setup *(新增 / NEW - Constitution Principle VII)*
+
+**Purpose**: Establish layer boundaries and enforce separation of concerns
+
+- [ ] T015 [P] [LAYER:DATA] Define Data Access Layer interfaces in plan.md Layers of Concerns section
+- [ ] T016 [P] [LAYER:BUSINESS] Define Business Logic Layer interfaces in plan.md Layers of Concerns section
+- [ ] T017 [P] [LAYER:PRESENTATION] Define Presentation Layer interfaces in plan.md Layers of Concerns section
+- [ ] T018 [LAYER:DATA] Create Data Access Layer directory/files or establish function naming conventions
+- [ ] T019 [LAYER:BUSINESS] Create Business Logic Layer directory/files or establish function naming conventions
+- [ ] T020 [LAYER:PRESENTATION] Create Presentation Layer directory/files or establish function naming conventions
+- [ ] T021 [LAYER] Setup layer violation detection (ESLint rules or code review checklist)
+
+**Single-File Architecture Adaptation**:
+- [ ] T018-SF [P] [LAYER:DATA] Add "Data Access Layer" section comment in index.html with save*, load*, delete* functions
+- [ ] T019-SF [P] [LAYER:BUSINESS] Add "Business Logic Layer" section comment in index.html with validate*, calculate* functions
+- [ ] T020-SF [P] [LAYER:PRESENTATION] Add "Presentation Layer" section comment in index.html with render*, switch* functions
+- [ ] T021-SF [LAYER] Add code review checklist in CONTRIBUTING.md for layer violation detection
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -84,6 +119,33 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
 
 ### Implementation for User Story 1
+
+**Organized by Module and Layer** *(新增 / NEW - Constitution Principles VI & VII)*
+
+#### Data Access Layer Tasks (LAYER:DATA)
+
+- [ ] T022 [P] [US1] [MODULE:DataAccess] [LAYER:DATA] Implement saveEntity1() in src/data/storage.js
+- [ ] T023 [P] [US1] [MODULE:DataAccess] [LAYER:DATA] Implement loadEntity1() in src/data/storage.js
+- [ ] T024 [P] [US1] [MODULE:DataAccess] [LAYER:DATA] Implement deleteEntity1() in src/data/storage.js
+
+#### Business Logic Layer Tasks (LAYER:BUSINESS)
+
+- [ ] T025 [P] [US1] [MODULE:Validation] [LAYER:BUSINESS] Implement validateEntity1() in src/business/validators.js
+- [ ] T026 [P] [US1] [MODULE:Processing] [LAYER:BUSINESS] Implement processEntity1() in src/business/processors.js
+- [ ] T027 [US1] [MODULE:Business] [LAYER:BUSINESS] Add error handling for entity1 operations
+
+#### Presentation Layer Tasks (LAYER:PRESENTATION)
+
+- [ ] T028 [P] [US1] [MODULE:UI] [LAYER:PRESENTATION] Implement renderEntity1List() in src/ui/components.js
+- [ ] T029 [P] [US1] [MODULE:UI] [LAYER:PRESENTATION] Implement renderEntity1Details() in src/ui/components.js
+- [ ] T030 [US1] [MODULE:UI] [LAYER:PRESENTATION] Add loading states and error messages
+
+#### Event Handler Tasks (Bridge Layer)
+
+- [ ] T031 [US1] [MODULE:EventHandlers] Implement handleEntity1Create() orchestrating all layers
+- [ ] T032 [US1] [MODULE:EventHandlers] Implement handleEntity1Delete() orchestrating all layers
+
+**Traditional Organization** (use if not following new constitution principles):
 
 - [ ] T012 [P] [US1] Create [Entity1] model in src/models/[entity1].py
 - [ ] T013 [P] [US1] Create [Entity2] model in src/models/[entity2].py
@@ -239,12 +301,96 @@ With multiple developers:
 
 ## Notes
 
-- [P] tasks = different files, no dependencies
-- [Story] label maps task to specific user story for traceability
+### Task Label Format *(Updated)*
+
+**Standard Labels**:
+- **[P]** = Parallel task (different files, no dependencies)
+- **[Story]** = User story identifier (e.g., [US1], [US2], [US3])
+
+**New Constitution Labels** *(新增 / NEW - Constitution Principles VI & VII)*:
+- **[MODULE:Name]** = Module identifier (e.g., [MODULE:DataAccess], [MODULE:Validation], [MODULE:UI])
+- **[LAYER:Name]** = Layer identifier (e.g., [LAYER:DATA], [LAYER:BUSINESS], [LAYER:PRESENTATION])
+
+**Full Example**:
+```
+- [ ] T022 [P] [US1] [MODULE:DataAccess] [LAYER:DATA] Implement saveEntity1() in src/data/storage.js
+```
+
+**Interpretation**:
+- `T022` = Task ID
+- `[P]` = Can run in parallel with other [P] tasks
+- `[US1]` = Belongs to User Story 1
+- `[MODULE:DataAccess]` = Part of Data Access module
+- `[LAYER:DATA]` = Part of Data Access Layer
+- Description: What to do and where
+
+### Task Organization Strategies
+
+**Strategy 1: By User Story** (Traditional - still valid)
+- Group all tasks for each user story together
+- Ensures each story can be completed independently
+- Good for small teams or sequential development
+
+**Strategy 2: By Module** (New - Constitution Principle VI)
+- Group tasks by module across all user stories
+- Enables module-focused development
+- Good for teams with specialized module ownership
+- Example: Complete all DataAccess module tasks, then all Validation module tasks
+
+**Strategy 3: By Layer** (New - Constitution Principle VII)
+- Group tasks by architectural layer across all user stories
+- Ensures proper layer isolation
+- Good for establishing layer boundaries early
+- Example: Complete all Data Layer tasks, then Business Layer, then Presentation Layer
+
+**Strategy 4: Hybrid** (Recommended for larger projects)
+- Phase 1: Setup (all teams together)
+- Phase 2: Foundational + Module/Layer setup (all teams together)
+- Phase 3+: User stories in parallel, organized by module/layer within each story
+- Balances independence with architectural rigor
+
+### Best Practices
+
+- **[P] tasks** = different files, no dependencies
+- **[Story]** label maps task to specific user story for traceability
+- **[MODULE]** label enables module boundary validation
+- **[LAYER]** label enforces separation of concerns
 - Each user story should be independently completable and testable
 - Verify tests fail before implementing
 - Commit after each task or logical group
 - Stop at any checkpoint to validate story independently
-- Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence
+- **Module tasks within a story must not create circular dependencies**
+- **Layer tasks must respect unidirectional communication (Data ← Business ← Presentation)**
+- Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence, layer violations
+
+### Module and Layer Validation Checklist
+
+Before marking a task complete, verify:
+
+**For [MODULE] tasks**:
+- [ ] Module has clear, documented interface
+- [ ] No circular dependencies with other modules
+- [ ] Module can be tested independently
+- [ ] Module follows single responsibility principle
+
+**For [LAYER:DATA] tasks**:
+- [ ] No DOM manipulation in data access code
+- [ ] No business logic in data access functions
+- [ ] Only called by business logic layer (never by presentation)
+
+**For [LAYER:BUSINESS] tasks**:
+- [ ] No DOM manipulation in business logic code
+- [ ] No direct storage API calls (uses data access layer)
+- [ ] Only called by presentation or event handlers
+
+**For [LAYER:PRESENTATION] tasks**:
+- [ ] No direct data access (uses business logic layer)
+- [ ] No business validation logic in UI code
+- [ ] Only renders based on data passed in
+
+**For [MODULE:EventHandlers] tasks**:
+- [ ] Properly orchestrates layers in correct order
+- [ ] Handles errors from all layers gracefully
+- [ ] Doesn't contain business logic (delegates to business layer)
 
 
