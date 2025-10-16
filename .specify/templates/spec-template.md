@@ -85,7 +85,7 @@
 ### Functional Requirements
 
 - **FR-001**: System MUST [specific capability, e.g., "allow users to create accounts"]
-- **FR-002**: System MUST [specific capability, e.g., "validate email addresses"]  
+- **FR-002**: System MUST [specific capability, e.g., "validate email addresses"]
 - **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
 - **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
 - **FR-005**: System MUST [behavior, e.g., "log all security events"]
@@ -94,6 +94,55 @@
 
 - **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
 - **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
+
+### Modularity Requirements *(新增 / NEW - Constitution Principle VI)*
+
+<!--
+  ACTION REQUIRED: For each new feature component, define modularity boundaries.
+  Reference: Constitution Principle VI - Modularity Mandate
+-->
+
+- **MR-001**: Feature MUST be implemented as [number] independent module(s): [list module names]
+- **MR-002**: Each module MUST have clear input/output interface defined in plan.md
+- **MR-003**: Module dependencies: [list dependencies or state "None - fully independent"]
+- **MR-004**: Module testing strategy: [how each module will be tested independently]
+
+*Example - Good modularity definition:*
+
+- **MR-001**: Feature MUST be implemented as 3 independent modules: UserAuthModule, DataPersistenceModule, UIRenderModule
+- **MR-002**: Each module MUST have clear JSDoc interfaces defined in plan.md
+- **MR-003**: Module dependencies: UIRenderModule depends on DataPersistenceModule; UserAuthModule is independent
+- **MR-004**: Each module will have isolated test suite in tests/modules/[module-name]/
+
+*Example - Single-file architecture adaptation:*
+
+- **MR-001**: Feature MUST be implemented as 4 function groups (pseudo-modules): auth*, data*, render*, validate*
+- **MR-002**: Function naming MUST follow conventions: auth* for authentication, data* for persistence, etc.
+- **MR-003**: Function dependencies: render* functions can only call validate* and data* functions, not vice versa
+- **MR-004**: Each function group will have dedicated test section in test-automation.html
+
+### Separation of Concerns Requirements *(新增 / NEW - Constitution Principle VII)*
+
+<!--
+  ACTION REQUIRED: Define layer boundaries for data, business logic, and presentation.
+  Reference: Constitution Principle VII - Separation of Concerns
+-->
+
+- **SC-001**: Feature touches these layers: [Data Access / Business Logic / Presentation / All]
+- **SC-002**: Cross-layer communication MUST use: [interfaces/contracts defined in plan.md]
+- **SC-003**: Prohibited patterns: [e.g., "Rendering functions MUST NOT directly call localStorage"]
+
+*Example - Web application:*
+
+- **SC-001**: Feature touches all three layers: Data (PostgreSQL), Business (validation service), Presentation (React components)
+- **SC-002**: Cross-layer communication MUST use defined service interfaces in plan.md
+- **SC-003**: Prohibited: React components directly calling database, business logic manipulating DOM
+
+*Example - Single-file architecture:*
+
+- **SC-001**: Feature touches all three layers: Data (saveProjects), Business (validateProject), Presentation (renderProjectList)
+- **SC-002**: Layers communicate via function calls: Presentation → Business → Data (one-way only)
+- **SC-003**: Prohibited: render* functions calling localStorage directly, save* functions calling document.getElementById
 
 ### Key Entities *(include if feature involves data)*
 
