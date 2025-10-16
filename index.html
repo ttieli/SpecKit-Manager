@@ -2795,6 +2795,14 @@
         window.firebaseInitialized = firebaseInitialized;
         window.offlineQueue = offlineQueue;
 
+        // ============================================================
+        // DATA ACCESS LAYER | 数据访问层
+        // ============================================================
+        // Handles Firebase and localStorage operations
+        // Functions: initFirebase, saveProjectToFirebase, loadProjectsFromFirebase, etc.
+        // 处理 Firebase 和 localStorage 操作
+        // 函数：initFirebase, saveProjectToFirebase, loadProjectsFromFirebase 等
+
         /**
          * Initialize Firebase app and services
          * 初始化 Firebase 应用和服务
@@ -3261,12 +3269,21 @@
          */
         async function saveProjectToFirebase(userId, projectId, projectData) {
             try {
-                // T025: Add timestamp
-                const dataWithTimestamp = {
+                // T020-T021: Use server timestamp for lastModified
+                const dataToSave = {
                     ...projectData,
                     updatedAt: Date.now(),
-                    createdAt: projectData.createdAt || Date.now()
+                    createdAt: projectData.createdAt || Date.now(),
+                    // Use Firebase server timestamp for cloud-first sync
+                    lastModified: window.firebase.database.ServerValue.TIMESTAMP
                 };
+
+                // T021: Remove migration flag after setting server timestamp
+                if (dataToSave.needsTimestampUpdate) {
+                    delete dataToSave.needsTimestampUpdate;
+                }
+
+                const dataWithTimestamp = dataToSave;
 
                 const projectRef = window.firebase.ref(
                     window.firebase.db,
@@ -3299,6 +3316,7 @@
             try {
                 console.log(`📥 Loading projects for user: ${userId}`);
 
+                // T027: Load from both Firebase and localStorage for conflict resolution
                 const projectsRef = window.firebase.ref(
                     window.firebase.db,
                     `users/${userId}/projects`
@@ -3308,16 +3326,30 @@
 
                 if (snapshot.exists()) {
                     const projectsObj = snapshot.val();
-                    const projectsArray = Object.values(projectsObj);
-                    console.log(`✅ Loaded ${projectsArray.length} projects from Firebase`);
+                    let cloudProjects = Object.values(projectsObj);
+                    console.log(`✅ Loaded ${cloudProjects.length} projects from Firebase`);
 
-                    // BUGFIX: Migrate project schema for backward compatibility
-                    // Ensure all projects have required fields (description, updatedAt)
-                    // and all iterations have required fields (completedSteps, inputs, notes, etc.)
-                    projects = projectsArray.map(migrateProjectSchema);
+                    // Migrate cloud projects
+                    cloudProjects = cloudProjects.map(migrateProjectSchema);
+
+                    // T027: Load local projects from localStorage
+                    const saved = localStorage.getItem('speckit_projects');
+                    let localProjects = [];
+                    if (saved) {
+                        localProjects = JSON.parse(saved).map(migrateProjectSchema);
+                        console.log(`💾 Loaded ${localProjects.length} projects from localStorage`);
+                    }
+
+                    // T027: Use cloud-first conflict resolution
+                    projects = conflictResolveProjects(cloudProjects, localProjects);
+
+                    // T028: Save merged result back to localStorage (cloud authority)
+                    localStorage.setItem('speckit_projects', JSON.stringify(projects));
+                    console.log(`🔄 Merged and saved ${projects.length} projects to localStorage`);
+
                     renderAllViews();
 
-                    return projects; // Return migrated projects
+                    return projects; // Return merged projects
                 } else {
                     console.log('ℹ️ No projects found in Firebase');
 
@@ -4097,6 +4129,14 @@
             };
         }
 
+        // ============================================================
+        // PRESENTATION LAYER | 表示层
+        // ============================================================
+        // Handles UI rendering and DOM updates
+        // Functions: renderAllViews, renderProjectTree, renderSyncStatus, etc.
+        // 处理 UI 渲染和 DOM 更新
+        // 函数：renderAllViews, renderProjectTree, renderSyncStatus 等
+
         // ============ 渲染所有视图 (Hotfix) ============
         function renderAllViews() {
             renderProjectTree();
@@ -4626,6 +4666,13 @@
                 project.updatedAt = project.createdAt || new Date().toISOString();
             }
 
+            // T013/T017: Add lastModified field for cloud-first sync (Feature 005)
+            // 为云优先同步添加 lastModified 字段 (特性 005)
+            if (project.lastModified === undefined || project.lastModified === null) {
+                project.lastModified = 0; // Epoch 0 = oldest possible timestamp
+                project.needsTimestampUpdate = true; // Flag for first save
+            }
+
             // BUGFIX: Migrate iteration schema for backward compatibility
             // Ensure all iterations have required fields to prevent "undefined" errors
             if (project.iterations && Array.isArray(project.iterations)) {
@@ -4660,6 +4707,120 @@
             }
 
             return project;
+        }
+
+        // ============================================================
+        // BUSINESS LOGIC LAYER | 业务逻辑层
+        // ============================================================
+        // Handles timestamp comparison, conflict resolution, and validation
+        // Functions: timestampCompare, timestampValidate, conflictResolveProjects, etc.
+        // 处理时间戳比较、冲突解决和验证
+        // 函数：timestampCompare, timestampValidate, conflictResolveProjects 等
+
+        /**
+         * T018: Validate timestamp value
+         * 验证时间戳值
+         * @param {any} timestamp - Timestamp to validate
+         * @returns {{valid: boolean, error?: string}} Validation result
+         */
+        function timestampValidate(timestamp) {
+            // Rule 1: Must be a number
+            if (typeof timestamp !== 'number') {
+                return { valid: false, error: 'Timestamp must be a number' };
+            }
+
+            // Rule 2: Must be positive (epoch 0 is valid, negative is not)
+            if (timestamp < 0) {
+                return { valid: false, error: 'Timestamp cannot be negative' };
+            }
+
+            // Rule 3: Must not be in the future (allow 5-minute clock skew tolerance)
+            const now = Date.now();
+            const maxAllowed = now + (5 * 60 * 1000); // 5 minutes ahead
+            if (timestamp > maxAllowed) {
+                return { valid: false, error: 'Timestamp is too far in the future' };
+            }
+
+            // Rule 4: Warn if suspiciously old (before year 2020) but don't fail
+            const year2020 = new Date('2020-01-01').getTime();
+            if (timestamp > 0 && timestamp < year2020) {
+                console.warn(`⚠️ Suspicious timestamp: ${new Date(timestamp).toISOString()}`);
+            }
+
+            return { valid: true };
+        }
+
+        /**
+         * T023-T024: Compare two timestamps
+         * 比较两个时间戳
+         * @param {number|null|undefined} cloudTimestamp - Server timestamp from Firebase
+         * @param {number|null|undefined} localTimestamp - Cached timestamp from localStorage
+         * @returns {number} -1 if cloud older, 0 if equal, 1 if cloud newer
+         */
+        function timestampCompare(cloudTimestamp, localTimestamp) {
+            // T024: Treat missing timestamp as 0 (oldest possible)
+            const cloudTime = (cloudTimestamp === null || cloudTimestamp === undefined) ? 0 : cloudTimestamp;
+            const localTime = (localTimestamp === null || localTimestamp === undefined) ? 0 : localTimestamp;
+
+            if (cloudTime > localTime) return 1;  // Cloud is newer
+            if (cloudTime < localTime) return -1; // Local is newer
+            return 0; // Equal (tie - caller should use cloud)
+        }
+
+        /**
+         * T026: Merge cloud and local projects using timestamp comparison
+         * 使用时间戳比较合并云端和本地项目
+         * @param {Array<Project>} cloudProjects - Projects from Firebase
+         * @param {Array<Project>} localProjects - Projects from localStorage
+         * @returns {Array<Project>} Merged array with newest versions
+         */
+        function conflictResolveProjects(cloudProjects, localProjects) {
+            // Create maps by ID for O(1) lookup
+            const cloudMap = {};
+            const localMap = {};
+
+            cloudProjects.forEach(p => { cloudMap[p.id] = p; });
+            localProjects.forEach(p => { localMap[p.id] = p; });
+
+            // Get all unique project IDs
+            const allIds = new Set([...Object.keys(cloudMap), ...Object.keys(localMap)]);
+
+            const merged = [];
+            let cloudWins = 0;
+            let localWins = 0;
+
+            for (const id of allIds) {
+                const cloudProj = cloudMap[id];
+                const localProj = localMap[id];
+
+                if (cloudProj && localProj) {
+                    // T030: Both exist - compare timestamps with explicit tie-breaking
+                    const cmp = timestampCompare(cloudProj.lastModified, localProj.lastModified);
+                    if (cmp > 0) {
+                        // Cloud is newer
+                        merged.push(cloudProj);
+                        cloudWins++;
+                    } else if (cmp < 0) {
+                        // Local is newer (pending sync)
+                        merged.push(localProj);
+                        localWins++;
+                    } else {
+                        // T030: Tie (equal timestamps) - use cloud as tie-breaker
+                        merged.push(cloudProj);
+                        cloudWins++;
+                    }
+                } else if (cloudProj) {
+                    // Only in cloud
+                    merged.push(cloudProj);
+                } else {
+                    // Only local (not yet synced)
+                    merged.push(localProj);
+                }
+            }
+
+            // T031: Log conflict resolution stats
+            console.log(`🔄 Conflict resolution: ${cloudWins} cloud wins, ${localWins} local wins`);
+            return merged;
         }
 
         // 加载项目数据
