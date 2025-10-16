@@ -5715,6 +5715,44 @@
             return true;
         }
 
+        /**
+         * T047: Switch to a different cycle
+         * 切换到不同的循环
+         * @param {string} projectId - Project ID
+         * @param {string} iterationId - Iteration ID
+         * @param {string} cycleId - Cycle ID to switch to
+         * @returns {boolean} True if successful, false otherwise
+         */
+        function cycleManagementSwitch(projectId, iterationId, cycleId) {
+            // Find project and iteration
+            const project = projects.find(p => p.id === projectId);
+            if (!project) {
+                alert('Project not found');
+                return false;
+            }
+
+            const iteration = project.iterations.find(i => i.id === iterationId);
+            if (!iteration) {
+                alert('Iteration not found');
+                return false;
+            }
+
+            // Validate cycle exists
+            const cycle = iteration.cycles.find(c => c.id === cycleId);
+            if (!cycle) {
+                alert('Cycle not found');
+                return false;
+            }
+
+            // Update current cycle
+            iteration.currentCycle = cycleId;
+
+            // Save changes
+            saveProjects();
+
+            return true;
+        }
+
         // ========================================
         // CYCLE MANAGEMENT - PRESENTATION LAYER
         // ========================================
@@ -6047,6 +6085,25 @@
                 showToast(`✅ Cycle deleted successfully`, 'success');
             }
             // If failed or cancelled, cycleManagementDelete already handled it
+        }
+
+        /**
+         * T048: Handle Cycle Switch (dropdown onchange)
+         * 处理循环切换（下拉框onChange）
+         * @param {string} projectId - Project ID
+         * @param {string} iterationId - Iteration ID
+         * @param {string} cycleId - New cycle ID to switch to
+         */
+        function handleCycleSwitch(projectId, iterationId, cycleId) {
+            // Call business logic to switch cycle
+            const success = cycleManagementSwitch(projectId, iterationId, cycleId);
+
+            // If successful, re-render to show new cycle's data
+            if (success) {
+                renderMainContent();
+                // No toast for cycle switch - it's a frequent operation
+            }
+            // If failed, cycleManagementSwitch already showed alert
         }
 
 
