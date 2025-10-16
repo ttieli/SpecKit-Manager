@@ -2863,13 +2863,21 @@
          * 处理认证状态变化
          * @param {Object|null} user - Firebase user object
          */
-        function handleAuthStateChange(user) {
+        async function handleAuthStateChange(user) {
             if (user) {
                 console.log('✅ User logged in:', user.email);
                 // Hide login UI, show main app
                 hideAuthUI();
-                // Load user projects from Firebase
-                loadProjectsFromFirebase(user.uid);
+
+                // FIX: Process offline queue BEFORE loading projects to prevent race condition
+                // This ensures deletions are applied to cloud before we load and merge
+                if (isOnline && offlineQueue.length > 0) {
+                    console.log('🔄 Processing offline queue before loading projects...');
+                    await processOfflineQueue();
+                }
+
+                // Load user projects from Firebase (after offline queue is processed)
+                await loadProjectsFromFirebase(user.uid);
             } else {
                 console.log('ℹ️ User logged out');
                 // Show login UI, hide main app
