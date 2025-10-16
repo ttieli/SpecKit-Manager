@@ -2504,7 +2504,8 @@
             remove,
             onValue,
             push,
-            child
+            child,
+            serverTimestamp
         } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js';
 
         // Make Firebase available globally
@@ -2528,7 +2529,8 @@
             remove,
             onValue,
             push,
-            child
+            child,
+            serverTimestamp
         };
 
         console.log('✅ Firebase SDK v12.4.0 loaded successfully');
@@ -3283,7 +3285,7 @@
                     updatedAt: Date.now(),
                     createdAt: projectData.createdAt || Date.now(),
                     // Use Firebase server timestamp for cloud-first sync
-                    lastModified: window.firebase.database.ServerValue.TIMESTAMP
+                    lastModified: window.firebase.serverTimestamp()
                 };
 
                 // T021: Remove migration flag after setting server timestamp
