@@ -2782,9 +2782,6 @@
         let firebaseInitialized = false; // Firebase initialization status (Firebase 初始化状态)
         let offlineQueue = [];           // Queue for offline operations (离线操作队列)
 
-        // T016: Data schema version for cycle management (Feature 004-)
-        const DATA_VERSION = 2; // V2: Cycle-keyed data structure
-
         // Expose to window for testing and cross-script access
         // 暴露到 window 对象以便测试和跨脚本访问
         window.firebaseConfig = firebaseConfig;
@@ -4656,9 +4653,14 @@
                             cycleHistory: {}
                         }];
                     }
-                    // T014: Apply cycle migration for each iteration
-                    project.iterations.forEach((iteration, index) => {
-                        project.iterations[index] = migrateIterationToCycles(iteration);
+                    // 确保每个迭代有循环相关字段
+                    project.iterations.forEach(iteration => {
+                        if (!iteration.currentCycle) {
+                            iteration.currentCycle = 'init';
+                        }
+                        if (!iteration.cycleHistory) {
+                            iteration.cycleHistory = {};
+                        }
                     });
                 });
                 saveProjects();
@@ -4671,17 +4673,6 @@
          * 保存项目到 localStorage 和 Firebase（自动保存触发器）
          */
         async function saveProjects() {
-            // T015: Create backup before save (24-hour retention)
-            const existing = localStorage.getItem('speckit_projects');
-            if (existing) {
-                const backup = {
-                    data: existing,
-                    timestamp: new Date().toISOString(),
-                    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-                };
-                localStorage.setItem('spec_kit_backup', JSON.stringify(backup));
-            }
-
             // Always save to localStorage first (offline backup)
             localStorage.setItem('speckit_projects', JSON.stringify(projects));
             console.log('💾 Saved to localStorage');
@@ -4754,82 +4745,6 @@
                 console.error('❌ Failed to load commands:', error);
                 commands = [];
             }
-        }
-
-        // ========================================
-        // CYCLE MANAGEMENT - DATA ACCESS LAYER
-        // ========================================
-        // Functions: migrateIterationToCycles()
-        // Note: Uses existing saveProjects() and loadProjects()
-
-        /**
-         * T013: Migrate iteration from V1 (flat) to V2 (cycle-keyed) data structure
-         * 将迭代从 V1（扁平）迁移到 V2（循环键控）数据结构
-         * @param {Object} iteration - Iteration object to migrate
-         * @returns {Object} Migrated iteration object
-         */
-        function migrateIterationToCycles(iteration) {
-            // Skip if already migrated
-            if (iteration.cycles && iteration.cycles.length > 0) {
-                return iteration;
-            }
-
-            // Create timestamped first cycle
-            const migrationDate = new Date().toISOString().split('T')[0];
-            const firstCycle = {
-                id: `cycle_${Date.now()}`,
-                name: `Initial Cycle - Migrated ${migrationDate}`,
-                createdAt: iteration.createdAt || new Date().toISOString(),
-                order: 1
-            };
-
-            // Initialize cycles array
-            iteration.cycles = [firstCycle];
-            iteration.currentCycle = firstCycle.id;
-
-            // Transform flat inputs to nested structure
-            if (iteration.inputs && typeof iteration.inputs === 'object') {
-                const oldInputs = { ...iteration.inputs };
-                iteration.inputs = {};
-
-                Object.entries(oldInputs).forEach(([stepId, value]) => {
-                    iteration.inputs[stepId] = {
-                        [firstCycle.id]: value
-                    };
-                });
-            } else {
-                iteration.inputs = {};
-            }
-
-            // Transform flat notes to nested structure
-            if (iteration.notes && typeof iteration.notes === 'object') {
-                const oldNotes = { ...iteration.notes };
-                iteration.notes = {};
-
-                Object.entries(oldNotes).forEach(([stepId, value]) => {
-                    iteration.notes[stepId] = {
-                        [firstCycle.id]: value
-                    };
-                });
-            } else {
-                iteration.notes = {};
-            }
-
-            // Transform flat completedSteps to nested structure
-            if (iteration.completedSteps && typeof iteration.completedSteps === 'object') {
-                const oldCompleted = { ...iteration.completedSteps };
-                iteration.completedSteps = {};
-
-                Object.entries(oldCompleted).forEach(([stepId, completed]) => {
-                    iteration.completedSteps[stepId] = {
-                        [firstCycle.id]: completed
-                    };
-                });
-            } else {
-                iteration.completedSteps = {};
-            }
-
-            return iteration;
         }
 
         // ===========================
@@ -5441,113 +5356,6 @@
             }
         }
 
-        // ========================================
-        // CYCLE MANAGEMENT - BUSINESS LOGIC LAYER
-        // ========================================
-        // Functions: cycleManagementAdd(), cycleManagementRename(),
-        //            cycleManagementDelete(), cycleManagementSwitch(),
-        //            validateCycleName(), getAdjacentCycle(), removeAllCycleData()
-
-        /**
-         * T018: Validate cycle name input
-         * 验证循环名称输入
-         * @param {string} name - Cycle name to validate
-         * @returns {{valid: boolean, errors: string[]}} Validation result
-         */
-        function validateCycleName(name) {
-            const errors = [];
-
-            const trimmedName = (name || '').trim();
-
-            if (!trimmedName) {
-                errors.push('Cycle name cannot be empty');
-            }
-
-            if (trimmedName.length > 200) {
-                errors.push('Cycle name cannot exceed 200 characters');
-            }
-
-            return {
-                valid: errors.length === 0,
-                errors
-            };
-        }
-
-        /**
-         * T019: Add a new cycle to an iteration
-         * 为迭代添加新循环
-         * @param {string} projectId - Project ID
-         * @param {string} iterationId - Iteration ID
-         * @param {string} cycleName - Optional custom cycle name
-         * @returns {Object|null} New cycle object or null if failed
-         */
-        function cycleManagementAdd(projectId, iterationId, cycleName) {
-            // Find project and iteration
-            const project = projects.find(p => p.id === projectId);
-            if (!project) {
-                alert('Project not found');
-                return null;
-            }
-
-            const iteration = project.iterations.find(i => i.id === iterationId);
-            if (!iteration) {
-                alert('Iteration not found');
-                return null;
-            }
-
-            // Generate cycle name
-            const trimmedName = (cycleName || '').trim();
-            const defaultName = `Cycle ${iteration.cycles.length + 1}`;
-            const finalName = trimmedName || defaultName;
-
-            // Validate name
-            const validation = validateCycleName(finalName);
-            if (!validation.valid) {
-                alert(validation.errors[0]);
-                return null;
-            }
-
-            // Create new cycle
-            const newCycle = {
-                id: `cycle_${Date.now()}`,
-                name: finalName,
-                createdAt: new Date().toISOString(),
-                order: Math.max(...iteration.cycles.map(c => c.order), 0) + 1
-            };
-
-            // Add to cycles array
-            iteration.cycles.push(newCycle);
-            iteration.currentCycle = newCycle.id;
-
-            // Initialize empty data for all workflow steps
-            commandSteps.forEach(step => {
-                const stepId = step.id;
-
-                // Ensure nested structure exists
-                if (!iteration.inputs[stepId]) iteration.inputs[stepId] = {};
-                if (!iteration.notes[stepId]) iteration.notes[stepId] = {};
-                if (!iteration.completedSteps[stepId]) iteration.completedSteps[stepId] = {};
-
-                // Initialize empty data for this cycle
-                iteration.inputs[stepId][newCycle.id] = '';
-                iteration.notes[stepId][newCycle.id] = '';
-                iteration.completedSteps[stepId][newCycle.id] = false;
-            });
-
-            // Save changes
-            saveProjects();
-
-            return newCycle;
-        }
-
-        // ========================================
-        // CYCLE MANAGEMENT - PRESENTATION LAYER
-        // ========================================
-        // Functions: renderCycleSelector(), truncateCycleName(), escapeHtml()
-        // Updates: renderIterationWorkflow() extended for cycle support
-
-        // (Cycle management presentation functions will be added here)
-
         // 渲染迭代工作流
         function renderIterationWorkflow(project, iteration) {
             const stats = calculateIterationStats(iteration);
@@ -5741,14 +5549,6 @@
             html += '</div>';
             return html;
         }
-
-        // ========================================
-        // CYCLE MANAGEMENT - EVENT HANDLER LAYER
-        // ========================================
-        // Functions: handleAddCycle(), handleRenameCycle(),
-        //            handleDeleteCycle(), handleCycleSwitch()
-
-        // (Cycle management event handlers will be added here)
 
 
         // 打开新建项目模态框
