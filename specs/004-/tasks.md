@@ -87,20 +87,20 @@
 
 #### Presentation Layer Tasks (LAYER:PRESENTATION)
 
-- [ ] T020 [P] [US1] [MODULE:UI] [LAYER:PRESENTATION] Implement renderCycleSelector(iterationId) function in index.html Presentation Layer
+- [X] T020 [P] [US1] [MODULE:UI] [LAYER:PRESENTATION] Implement renderCycleSelector(iterationId) function in index.html Presentation Layer
   - Find iteration by ID
   - Sort cycles by order
   - Return HTML string with `<select id="cycleSelect">` containing options for each cycle
   - Add three buttons: ➕ Add, ✏️ Rename, 🗑️ Delete with onclick handlers
   - Truncate cycle names >50 chars with escapeHtml() and title attribute for tooltip
-- [ ] T021 [P] [US1] [MODULE:UI] [LAYER:PRESENTATION] Implement truncateCycleName(name, maxLength) function in index.html Presentation Layer
-- [ ] T022 [P] [US1] [MODULE:UI] [LAYER:PRESENTATION] Implement escapeHtml(text) function in index.html Presentation Layer (use document.createElement('div') with textContent)
-- [ ] T023 [US1] [MODULE:UI] [LAYER:PRESENTATION] Update renderIterationWorkflow(iterationId) function in index.html to call renderCycleSelector() and insert HTML at top of workflow
-- [ ] T024 [US1] [MODULE:UI] [LAYER:PRESENTATION] Update renderIterationWorkflow() to read cycle-specific data: inputs[stepId][currentCycleId], notes[stepId][currentCycleId], completedSteps[stepId][currentCycleId]
+- [X] T021 [P] [US1] [MODULE:UI] [LAYER:PRESENTATION] Implement truncateCycleName(name, maxLength) function in index.html Presentation Layer
+- [X] T022 [P] [US1] [MODULE:UI] [LAYER:PRESENTATION] Implement escapeHtml(text) function in index.html Presentation Layer (use document.createElement('div') with textContent)
+- [X] T023 [US1] [MODULE:UI] [LAYER:PRESENTATION] Update renderIterationWorkflow(iterationId) function in index.html to call renderCycleSelector() and insert HTML at top of workflow
+- [X] T024 [US1] [MODULE:UI] [LAYER:PRESENTATION] Update renderIterationWorkflow() to read cycle-specific data: inputs[stepId][currentCycleId], notes[stepId][currentCycleId], completedSteps[stepId][currentCycleId]
 
 #### Event Handler Tasks (Bridge Layer)
 
-- [ ] T025 [US1] [MODULE:EventHandlers] Implement handleAddCycle(iterationId) function in index.html Event Handler Layer
+- [X] T025 [US1] [MODULE:EventHandlers] Implement handleAddCycle(iterationId) function in index.html Event Handler Layer
   - Prompt user: `prompt('Enter cycle name (leave empty for default):')`
   - Handle cancellation (null return)
   - Call cycleManagementAdd(iterationId, cycleName)
