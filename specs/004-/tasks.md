@@ -129,7 +129,7 @@
 
 #### Business Logic Layer Tasks (LAYER:BUSINESS)
 
-- [ ] T031 [P] [US2] [MODULE:CycleManagement] [LAYER:BUSINESS] Implement cycleManagementRename(iterationId, cycleId, newName) function in index.html Business Logic Layer
+- [X] T031 [P] [US2] [MODULE:CycleManagement] [LAYER:BUSINESS] Implement cycleManagementRename(iterationId, cycleId, newName) function in index.html Business Logic Layer
   - Find iteration by ID
   - Find cycle by ID within iteration
   - Validate newName using validateCycleName() (reuse from US1)
@@ -139,7 +139,7 @@
 
 #### Event Handler Tasks (Bridge Layer)
 
-- [ ] T032 [US2] [MODULE:EventHandlers] Implement handleRenameCycle(iterationId, cycleId) function in index.html Event Handler Layer
+- [X] T032 [US2] [MODULE:EventHandlers] Implement handleRenameCycle(iterationId, cycleId) function in index.html Event Handler Layer
   - Find current cycle to get existing name
   - Prompt user: `prompt('Enter new cycle name:', currentCycleName)`
   - Handle cancellation (null return)
@@ -168,15 +168,15 @@
 
 #### Business Logic Layer Tasks (LAYER:BUSINESS)
 
-- [ ] T037 [P] [US3] [MODULE:CycleManagement] [LAYER:BUSINESS] Implement getAdjacentCycle(iteration, deletedCycleId) function in index.html Business Logic Layer
+- [X] T037 [P] [US3] [MODULE:CycleManagement] [LAYER:BUSINESS] Implement getAdjacentCycle(iteration, deletedCycleId) function in index.html Business Logic Layer
   - Sort cycles by order
   - Find index of deleted cycle
   - Return previous cycle if exists, otherwise next cycle, otherwise first cycle (fallback)
-- [ ] T038 [P] [US3] [MODULE:CycleManagement] [LAYER:BUSINESS] Implement removeAllCycleData(iteration, cycleId) function in index.html Business Logic Layer
+- [X] T038 [P] [US3] [MODULE:CycleManagement] [LAYER:BUSINESS] Implement removeAllCycleData(iteration, cycleId) function in index.html Business Logic Layer
   - Iterate over all stepIds in inputs/notes/completedSteps/cycleHistory
   - Delete cycleId key from each nested object: `delete iteration.inputs[stepId][cycleId]`
   - No return value (mutates iteration object)
-- [ ] T039 [US3] [MODULE:CycleManagement] [LAYER:BUSINESS] Implement cycleManagementDelete(iterationId, cycleId) function in index.html Business Logic Layer
+- [X] T039 [US3] [MODULE:CycleManagement] [LAYER:BUSINESS] Implement cycleManagementDelete(iterationId, cycleId) function in index.html Business Logic Layer
   - Find iteration by ID
   - Check minimum cycle constraint: if (iteration.cycles.length === 1) { alert('Cannot delete last cycle'); return false; }
   - Find cycle by ID to get name for confirmation
@@ -192,7 +192,7 @@
 
 #### Event Handler Tasks (Bridge Layer)
 
-- [ ] T040 [US3] [MODULE:EventHandlers] Implement handleDeleteCycle(iterationId, cycleId) function in index.html Event Handler Layer
+- [X] T040 [US3] [MODULE:EventHandlers] Implement handleDeleteCycle(iterationId, cycleId) function in index.html Event Handler Layer
   - Call cycleManagementDelete(iterationId, cycleId)
   - If successful, call renderIterationWorkflow(iterationId) to update UI
   - If failed (validation or cancellation), no action needed (already handled by cycleManagementDelete)

@@ -5540,6 +5540,181 @@
             return newCycle;
         }
 
+        /**
+         * T037: Get adjacent cycle for auto-switch after deletion
+         * 获取相邻循环用于删除后自动切换
+         * @param {Object} iteration - Iteration object
+         * @param {string} deletedCycleId - ID of cycle being deleted
+         * @returns {Object} Adjacent cycle object
+         */
+        function getAdjacentCycle(iteration, deletedCycleId) {
+            // Sort cycles by order
+            const sortedCycles = iteration.cycles.slice().sort((a, b) => a.order - b.order);
+
+            // Find index of deleted cycle
+            const deletedIndex = sortedCycles.findIndex(c => c.id === deletedCycleId);
+
+            if (deletedIndex === -1) {
+                // Cycle not found, return first cycle as fallback
+                return sortedCycles[0];
+            }
+
+            // Try previous cycle first
+            if (deletedIndex > 0) {
+                return sortedCycles[deletedIndex - 1];
+            }
+
+            // Otherwise return next cycle
+            if (deletedIndex < sortedCycles.length - 1) {
+                return sortedCycles[deletedIndex + 1];
+            }
+
+            // Fallback to first cycle (shouldn't happen if validation works)
+            return sortedCycles[0];
+        }
+
+        /**
+         * T038: Remove all cycle data from iteration
+         * 从迭代中删除所有循环数据
+         * @param {Object} iteration - Iteration object
+         * @param {string} cycleId - Cycle ID to remove data for
+         */
+        function removeAllCycleData(iteration, cycleId) {
+            // Remove from inputs
+            Object.keys(iteration.inputs || {}).forEach(stepId => {
+                if (iteration.inputs[stepId] && iteration.inputs[stepId][cycleId] !== undefined) {
+                    delete iteration.inputs[stepId][cycleId];
+                }
+            });
+
+            // Remove from notes
+            Object.keys(iteration.notes || {}).forEach(stepId => {
+                if (iteration.notes[stepId] && iteration.notes[stepId][cycleId] !== undefined) {
+                    delete iteration.notes[stepId][cycleId];
+                }
+            });
+
+            // Remove from completedSteps
+            Object.keys(iteration.completedSteps || {}).forEach(stepId => {
+                if (iteration.completedSteps[stepId] && iteration.completedSteps[stepId][cycleId] !== undefined) {
+                    delete iteration.completedSteps[stepId][cycleId];
+                }
+            });
+        }
+
+        /**
+         * T031: Rename an existing cycle
+         * 重命名现有循环
+         * @param {string} projectId - Project ID
+         * @param {string} iterationId - Iteration ID
+         * @param {string} cycleId - Cycle ID to rename
+         * @param {string} newName - New name for the cycle
+         * @returns {boolean} True if successful, false otherwise
+         */
+        function cycleManagementRename(projectId, iterationId, cycleId, newName) {
+            // Find project and iteration
+            const project = projects.find(p => p.id === projectId);
+            if (!project) {
+                alert('Project not found');
+                return false;
+            }
+
+            const iteration = project.iterations.find(i => i.id === iterationId);
+            if (!iteration) {
+                alert('Iteration not found');
+                return false;
+            }
+
+            // Find cycle
+            const cycle = iteration.cycles.find(c => c.id === cycleId);
+            if (!cycle) {
+                alert('Cycle not found');
+                return false;
+            }
+
+            // Validate new name
+            const trimmedName = newName.trim();
+            const validation = validateCycleName(trimmedName);
+            if (!validation.valid) {
+                alert(validation.errors[0]);
+                return false;
+            }
+
+            // Update cycle name
+            cycle.name = trimmedName;
+
+            // Save changes
+            saveProjects();
+
+            return true;
+        }
+
+        /**
+         * T039: Delete a cycle with confirmation and data cleanup
+         * 删除循环（需确认）并清理数据
+         * @param {string} projectId - Project ID
+         * @param {string} iterationId - Iteration ID
+         * @param {string} cycleId - Cycle ID to delete
+         * @returns {boolean} True if successful, false otherwise
+         */
+        function cycleManagementDelete(projectId, iterationId, cycleId) {
+            // Find project and iteration
+            const project = projects.find(p => p.id === projectId);
+            if (!project) {
+                alert('Project not found');
+                return false;
+            }
+
+            const iteration = project.iterations.find(i => i.id === iterationId);
+            if (!iteration) {
+                alert('Iteration not found');
+                return false;
+            }
+
+            // Check minimum cycle constraint
+            if (iteration.cycles.length === 1) {
+                alert('Cannot delete the last cycle. Each iteration must have at least one cycle.');
+                return false;
+            }
+
+            // Find cycle to get name for confirmation
+            const cycle = iteration.cycles.find(c => c.id === cycleId);
+            if (!cycle) {
+                alert('Cycle not found');
+                return false;
+            }
+
+            // Show confirmation dialog with data loss warning
+            const confirmed = confirm(
+                `⚠️ Delete Cycle: "${cycle.name}"?\n\n` +
+                `This will permanently delete all data (inputs, notes, completion status) for this cycle.\n\n` +
+                `This action cannot be undone. Continue?`
+            );
+
+            if (!confirmed) {
+                return false;
+            }
+
+            // Determine if need auto-switch
+            const deletingCurrentCycle = iteration.currentCycle === cycleId;
+            if (deletingCurrentCycle) {
+                // Get adjacent cycle for auto-switch
+                const adjacentCycle = getAdjacentCycle(iteration, cycleId);
+                iteration.currentCycle = adjacentCycle.id;
+            }
+
+            // Remove cycle from array
+            iteration.cycles = iteration.cycles.filter(c => c.id !== cycleId);
+
+            // Remove all cycle data
+            removeAllCycleData(iteration, cycleId);
+
+            // Save changes
+            saveProjects();
+
+            return true;
+        }
+
         // ========================================
         // CYCLE MANAGEMENT - PRESENTATION LAYER
         // ========================================
@@ -5816,6 +5991,62 @@
                 showToast(`✅ Cycle "${newCycle.name}" added successfully`, 'success');
             }
             // If failed, cycleManagementAdd already showed alert
+        }
+
+        /**
+         * T032: Handle Rename Cycle button click
+         * 处理重命名循环按钮点击
+         * @param {string} projectId - Project ID
+         * @param {string} iterationId - Iteration ID
+         * @param {string} cycleId - Cycle ID to rename
+         */
+        function handleRenameCycle(projectId, iterationId, cycleId) {
+            // Find current cycle to get existing name
+            const project = projects.find(p => p.id === projectId);
+            if (!project) return;
+
+            const iteration = project.iterations.find(i => i.id === iterationId);
+            if (!iteration) return;
+
+            const cycle = iteration.cycles.find(c => c.id === cycleId);
+            if (!cycle) return;
+
+            // Prompt user with current name pre-filled
+            const newName = prompt('Enter new cycle name:', cycle.name);
+
+            // Handle cancellation
+            if (newName === null) {
+                return;
+            }
+
+            // Call business logic to rename cycle
+            const success = cycleManagementRename(projectId, iterationId, cycleId, newName);
+
+            // If successful, re-render to show updated name
+            if (success) {
+                renderMainContent();
+                showToast(`✅ Cycle renamed to "${newName}"`, 'success');
+            }
+            // If failed, cycleManagementRename already showed alert
+        }
+
+        /**
+         * T040: Handle Delete Cycle button click
+         * 处理删除循环按钮点击
+         * @param {string} projectId - Project ID
+         * @param {string} iterationId - Iteration ID
+         * @param {string} cycleId - Cycle ID to delete
+         */
+        function handleDeleteCycle(projectId, iterationId, cycleId) {
+            // Call business logic to delete cycle (includes confirmation)
+            const success = cycleManagementDelete(projectId, iterationId, cycleId);
+
+            // If successful, re-render to show updated cycle list
+            if (success) {
+                renderMainContent();
+                showToast(`✅ Cycle deleted successfully`, 'success');
+            }
+            // If failed or cancelled, cycleManagementDelete already handled it
         }
 
 
