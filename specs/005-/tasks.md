@@ -5,7 +5,7 @@
 
 **Organization**: Tasks grouped by user story for independent implementation and testing
 
-**Tests**: No automated test tasks - manual testing via test-automation.html (per spec: E2E priority)
+**Tests**: Automated unit tests for pure functions (timestamp*, conflict*) + manual E2E tests for sync flows (per spec: E2E priority)
 
 ## Format: `[ID] [P?] [Story] Description`
 - **[P]**: Can run in parallel (different files, no dependencies)
@@ -59,7 +59,10 @@
 
 ### Data Migration Foundation
 
-- [ ] T013 Implement migrateIterationToCycles() if not exists, or verify schema migration for lastModified field in index.html (Data Access Layer ~line 2800)
+- [ ] T013 Verify migrateProjectSchema() exists and handles lastModified field in index.html (Data Access Layer ~line 2800)
+  - Check: `grep -n "function migrateProjectSchema" index.html`
+  - If missing: implement function to add `lastModified: 0` to old projects
+  - If exists: verify it adds `lastModified: 0` and `needsTimestampUpdate: true` for projects missing this field
 - [ ] T014 Update loadProjects() to call migration functions in correct order in index.html (~line 4666)
 - [ ] T015 Update saveProjects() to create 24-hour backup before save in index.html (~line 4703)
 - [ ] T016 Add DATA_VERSION = 2 constant if not exists in index.html (~line 100)
@@ -112,7 +115,7 @@
 
 - [ ] T026 [US1] Implement conflictResolveProjects(cloudProjects[], localProjects[]) in index.html (Business Logic Layer ~line 4700)
   - Create cloudMap and localMap by ID
-  - For each ID: compare timestamps, use newer version
+  - For each ID: compare timestamps, use newer version (if timestamps equal, use cloud version as tie-breaker)
   - Return merged array
 - [ ] T027 [US1] Modify loadProjects() to call conflictResolveProjects() instead of merge logic in index.html (~line 4666)
 - [ ] T028 [US1] Update loadProjects() to save merged result back to localStorage after conflict resolution
