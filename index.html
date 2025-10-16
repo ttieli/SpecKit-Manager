@@ -5546,7 +5546,83 @@
         // Functions: renderCycleSelector(), truncateCycleName(), escapeHtml()
         // Updates: renderIterationWorkflow() extended for cycle support
 
-        // (Cycle management presentation functions will be added here)
+        /**
+         * T022: Escape HTML special characters to prevent XSS
+         * 转义 HTML 特殊字符以防止 XSS
+         * @param {string} text - Text to escape
+         * @returns {string} Escaped text
+         */
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        /**
+         * T021: Truncate cycle name with ellipsis if too long
+         * 截断过长的循环名称并添加省略号
+         * @param {string} name - Cycle name to truncate
+         * @param {number} maxLength - Maximum length before truncation
+         * @returns {string} Truncated name
+         */
+        function truncateCycleName(name, maxLength) {
+            if (!name || name.length <= maxLength) {
+                return name;
+            }
+            return name.substring(0, maxLength - 3) + '...';
+        }
+
+        /**
+         * T020: Render cycle selector dropdown and action buttons
+         * 渲染循环选择器下拉框和操作按钮
+         * @param {string} projectId - Project ID
+         * @param {string} iterationId - Iteration ID
+         * @returns {string} HTML string for cycle selector
+         */
+        function renderCycleSelector(projectId, iterationId) {
+            const project = projects.find(p => p.id === projectId);
+            if (!project) return '';
+
+            const iteration = project.iterations.find(i => i.id === iterationId);
+            if (!iteration) return '';
+
+            // Sort cycles by order
+            const cycles = (iteration.cycles || []).sort((a, b) => a.order - b.order);
+            if (cycles.length === 0) return '';
+
+            const cycleOptions = cycles.map(cycle => {
+                const isSelected = cycle.id === iteration.currentCycle;
+                const displayName = escapeHtml(truncateCycleName(cycle.name, 50));
+                const fullName = escapeHtml(cycle.name);
+                return `<option value="${cycle.id}" ${isSelected ? 'selected' : ''} title="${fullName}">${displayName}</option>`;
+            }).join('');
+
+            return `
+                <div class="cycle-selector" style="background: white; border-radius: 8px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 10px;">
+                    <label style="font-weight: 600; color: #1e293b; font-size: 0.9rem;">Cycle:</label>
+                    <select id="cycleSelect"
+                            onchange="handleCycleSwitch('${projectId}', '${iterationId}', this.value)"
+                            style="flex: 1; padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.9rem; background: white; cursor: pointer;">
+                        ${cycleOptions}
+                    </select>
+                    <button onclick="handleAddCycle('${projectId}', '${iterationId}')"
+                            title="Add Cycle"
+                            style="padding: 8px 12px; border: none; border-radius: 6px; background: #2563eb; color: white; cursor: pointer; font-size: 1rem; transition: all 0.2s;">
+                        ➕
+                    </button>
+                    <button onclick="handleRenameCycle('${projectId}', '${iterationId}', '${iteration.currentCycle}')"
+                            title="Rename Cycle"
+                            style="padding: 8px 12px; border: none; border-radius: 6px; background: #6b7280; color: white; cursor: pointer; font-size: 1rem; transition: all 0.2s;">
+                        ✏️
+                    </button>
+                    <button onclick="handleDeleteCycle('${projectId}', '${iterationId}', '${iteration.currentCycle}')"
+                            title="Delete Cycle"
+                            style="padding: 8px 12px; border: none; border-radius: 6px; background: #dc2626; color: white; cursor: pointer; font-size: 1rem; transition: all 0.2s;">
+                        🗑️
+                    </button>
+                </div>
+            `;
+        }
 
         // 渲染迭代工作流
         function renderIterationWorkflow(project, iteration) {
@@ -5638,42 +5714,8 @@
                 </div>
             `;
 
-            // 循环选择器
-            let cycleSelector = `
-                <div class="cycle-selector">
-                    <div class="cycle-selector-title">当前循环颜色</div>
-                    <div class="cycle-options">
-                        <div class="cycle-option init ${iteration.currentCycle === 'init' ? 'active' : ''}"
-                             onclick="selectCycle('${project.id}', '${iteration.id}', 'init')">
-                            初始化（灰色）
-                        </div>
-                        <div class="cycle-option cycle-1 ${iteration.currentCycle === 'cycle-1' ? 'active' : ''}"
-                             onclick="selectCycle('${project.id}', '${iteration.id}', 'cycle-1')">
-                            循环1（蓝色）
-                        </div>
-                        <div class="cycle-option cycle-2 ${iteration.currentCycle === 'cycle-2' ? 'active' : ''}"
-                             onclick="selectCycle('${project.id}', '${iteration.id}', 'cycle-2')">
-                            循环2（粉色）
-                        </div>
-                        <div class="cycle-option cycle-3 ${iteration.currentCycle === 'cycle-3' ? 'active' : ''}"
-                             onclick="selectCycle('${project.id}', '${iteration.id}', 'cycle-3')">
-                            循环3（黄色）
-                        </div>
-                        <div class="cycle-option cycle-4 ${iteration.currentCycle === 'cycle-4' ? 'active' : ''}"
-                             onclick="selectCycle('${project.id}', '${iteration.id}', 'cycle-4')">
-                            循环4（靛蓝）
-                        </div>
-                        <div class="cycle-option cycle-5 ${iteration.currentCycle === 'cycle-5' ? 'active' : ''}"
-                             onclick="selectCycle('${project.id}', '${iteration.id}', 'cycle-5')">
-                            循环5（青色）
-                        </div>
-                        <div class="cycle-option cycle-6 ${iteration.currentCycle === 'cycle-6' ? 'active' : ''}"
-                             onclick="selectCycle('${project.id}', '${iteration.id}', 'cycle-6')">
-                            循环6（玫红）
-                        </div>
-                    </div>
-                </div>
-            `;
+            // T023: Render cycle selector using the new function
+            const cycleSelector = renderCycleSelector(project.id, iteration.id);
 
             let html = statsPanel + cycleSelector;
             let currentPhase = '';
@@ -5691,13 +5733,15 @@
                         <div class="workflow">
                     `;
                 }
-                
-                const isCompleted = iteration.completedSteps[step.id] || false;
-                const savedInput = iteration.inputs[step.id] || '';
-                const savedNotes = iteration.notes[step.id] || '';
-                
+
+                // T024: Read cycle-specific data for current cycle
+                const currentCycleId = iteration.currentCycle;
+                const isCompleted = iteration.completedSteps[step.id]?.[currentCycleId] || false;
+                const savedInput = iteration.inputs[step.id]?.[currentCycleId] || '';
+                const savedNotes = iteration.notes[step.id]?.[currentCycleId] || '';
+
                 // 获取该步骤完成时的循环颜色
-                const stepCycle = iteration.cycleHistory[step.id] || iteration.currentCycle;
+                const stepCycle = iteration.cycleHistory[step.id] || currentCycleId;
                 
                 // 特殊处理初始化阶段
                 let cycleClass = '';
@@ -5748,7 +5792,31 @@
         // Functions: handleAddCycle(), handleRenameCycle(),
         //            handleDeleteCycle(), handleCycleSwitch()
 
-        // (Cycle management event handlers will be added here)
+        /**
+         * T025: Handle Add Cycle button click
+         * 处理添加循环按钮点击
+         * @param {string} projectId - Project ID
+         * @param {string} iterationId - Iteration ID
+         */
+        function handleAddCycle(projectId, iterationId) {
+            // Prompt user for cycle name
+            const cycleName = prompt('Enter cycle name (leave empty for default):');
+
+            // Handle cancellation
+            if (cycleName === null) {
+                return;
+            }
+
+            // Call business logic to add cycle
+            const newCycle = cycleManagementAdd(projectId, iterationId, cycleName);
+
+            // If successful, re-render the workflow to show new cycle
+            if (newCycle) {
+                renderMainContent();
+                showToast(`✅ Cycle "${newCycle.name}" added successfully`, 'success');
+            }
+            // If failed, cycleManagementAdd already showed alert
+        }
 
 
         // 打开新建项目模态框
