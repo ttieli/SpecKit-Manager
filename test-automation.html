@@ -420,7 +420,8 @@
                 'phase3': 'Phase 3: 用户认证',
                 'phase4': 'Phase 4: 数据持久化',
                 'ui': 'UI 元素验证',
-                'integration': '集成测试'
+                'integration': '集成测试',
+                'cycle-management': 'Cycle Management (Feature 004-)'
             };
             return names[category] || category;
         }
@@ -761,13 +762,35 @@
                 }
             ];
 
+            // ========================================
+            // CYCLE MANAGEMENT TESTS (Feature 004-)
+            // ========================================
+            // Test sections for cycle management functionality
+            // - Data Migration Tests
+            // - Business Logic Tests (Add, Rename, Delete, Switch)
+            // - Presentation Tests (Render cycle selector)
+            // - Event Handler Tests
+            // - Integration Tests
+            const cycleManagementTests = [
+                // Tests will be added here as functions are implemented
+                {
+                    name: '[CYCLE] Placeholder - Cycle Management Tests',
+                    fn: async () => {
+                        log('info', 'Cycle management tests will be added during implementation');
+                        // This placeholder ensures the test section exists
+                    },
+                    category: 'cycle-management'
+                }
+            ];
+
             // Collect all tests
             const allTests = [
                 ...phase1Tests,
                 ...phase2Tests,
                 ...phase3Tests,
                 ...phase4Tests,
-                ...uiTests
+                ...uiTests,
+                ...cycleManagementTests
             ];
 
             totalTests = allTests.length;
