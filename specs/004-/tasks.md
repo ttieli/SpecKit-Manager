@@ -220,7 +220,7 @@
 
 #### Business Logic Layer Tasks (LAYER:BUSINESS)
 
-- [ ] T047 [MODULE:CycleManagement] [LAYER:BUSINESS] Implement cycleManagementSwitch(iterationId, cycleId) function in index.html Business Logic Layer
+- [X] T047 [MODULE:CycleManagement] [LAYER:BUSINESS] Implement cycleManagementSwitch(iterationId, cycleId) function in index.html Business Logic Layer
   - Find iteration by ID
   - Validate cycle exists in iteration.cycles
   - Update iteration.currentCycle = cycleId
@@ -229,7 +229,7 @@
 
 #### Event Handler Tasks (Bridge Layer)
 
-- [ ] T048 [MODULE:EventHandlers] Implement handleCycleSwitch(iterationId, cycleId) function in index.html Event Handler Layer
+- [X] T048 [MODULE:EventHandlers] Implement handleCycleSwitch(iterationId, cycleId) function in index.html Event Handler Layer
   - Called by dropdown onchange event
   - Call cycleManagementSwitch(iterationId, cycleId)
   - Call renderIterationWorkflow(iterationId) to update UI with new cycle's data
