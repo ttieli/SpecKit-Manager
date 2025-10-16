@@ -1509,6 +1509,56 @@
             white-space: nowrap;
         }
 
+        /* T022: Project action buttons CSS */
+        .project-actions {
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .project-tree-node:hover .project-actions {
+            opacity: 1;
+        }
+
+        .project-action-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 28px;
+            height: 28px;
+        }
+
+        .project-action-btn:hover {
+            background: white;
+            border-color: #2563eb;
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+        }
+
+        .project-action-btn.project-action-delete:hover {
+            border-color: #ef4444;
+            background: #fef2f2;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+        }
+
+        .project-tree-node.active .project-action-btn {
+            background: rgba(255, 255, 255, 0.95);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .project-tree-node.active .project-action-btn:hover {
+            background: white;
+            border-color: white;
+        }
+
         .project-tree-children {
             margin-left: 24px;
             margin-top: 4px;
@@ -1517,6 +1567,117 @@
 
         .project-tree-children.expanded {
             display: block;
+        }
+
+        /* T035-T038: Progress Dashboard Styles */
+        .project-tree-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .progress-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+
+        .progress-metrics {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .iteration-count {
+            color: #64748b;
+            font-size: 0.7rem;
+        }
+
+        .completion-badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .completion-badge.empty {
+            background: #f1f5f9;
+            color: #94a3b8;
+        }
+
+        .completion-badge.in-progress {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .completion-badge.complete {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        /* T036: Progress bar styles */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            transition: width 0.3s ease, background 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .progress-bar-fill.empty {
+            width: 0;
+            background: #cbd5e1;
+        }
+
+        .progress-bar-fill.in-progress {
+            background: linear-gradient(90deg, #3b82f6, #2563eb);
+        }
+
+        .progress-bar-fill.complete {
+            background: linear-gradient(90deg, #10b981, #059669);
+        }
+
+        /* T037: Last updated styles */
+        .last-updated {
+            color: #94a3b8;
+            font-size: 0.65rem;
+            font-style: italic;
+        }
+
+        /* Active state overrides */
+        .project-tree-node.active .progress-info {
+            opacity: 1;
+        }
+
+        .project-tree-node.active .iteration-count,
+        .project-tree-node.active .last-updated {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .project-tree-node.active .completion-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .project-tree-node.active .progress-bar {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .project-tree-node.active .progress-bar-fill {
+            background: white;
         }
 
         .iteration-tree-node {
@@ -2085,6 +2246,238 @@
         .user-info {
             display: none !important;
         }
+
+        /* ============================================ */
+        /* T057-T061: Command Library Styles */
+        /* ============================================ */
+
+        /* View tabs navigation */
+        .view-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 16px 24px;
+            background: #f8fafc;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .view-tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background: white;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .view-tab-btn:hover {
+            background: #f1f5f9;
+            color: #2563eb;
+        }
+
+        .view-tab-btn.active {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            border-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        /* Tab content containers */
+        .tab-content {
+            flex: 1;
+            overflow: auto;
+        }
+
+        /* T057: Commands header styles */
+        .commands-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 24px;
+            background: white;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .search-container {
+            flex: 1;
+        }
+
+        .command-search-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .command-search-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .add-command-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .add-command-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Command list container */
+        .command-list {
+            padding: 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* T058: Command category styles */
+        .command-category {
+            margin-bottom: 32px;
+        }
+
+        .command-category-header {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        /* T059: Command item styles */
+        .command-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: grab;
+            transition: all 0.2s;
+        }
+
+        .command-item:hover {
+            border-color: #cbd5e0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .command-item:active {
+            cursor: grabbing;
+        }
+
+        /* T060: Command info and actions layout */
+        .command-info {
+            flex: 1;
+            min-width: 0;
+            margin-right: 16px;
+        }
+
+        .command-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 6px;
+        }
+
+        .command-text {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #64748b;
+            background: #f8fafc;
+            padding: 8px 12px;
+            border-radius: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .command-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .command-action-btn {
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .command-action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .command-action-btn.copy-btn:hover {
+            background: #dbeafe;
+            border-color: #2563eb;
+        }
+
+        .command-action-btn.edit-btn:hover {
+            background: #fef3c7;
+            border-color: #f59e0b;
+        }
+
+        .command-action-btn.delete-btn:hover {
+            background: #fef2f2;
+            border-color: #ef4444;
+        }
+
+        /* T061: Toast notification styles */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 16px 24px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            font-size: 0.95rem;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s;
+            z-index: 10000;
+            max-width: 400px;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast-success {
+            border-left: 4px solid #10b981;
+            color: #059669;
+        }
+
+        .toast-error {
+            border-left: 4px solid #ef4444;
+            color: #dc2626;
+        }
+
+        .toast-info {
+            border-left: 4px solid #2563eb;
+            color: #1d4ed8;
+        }
     </style>
 
     <!-- Firebase SDK v12.4.0 (Modular ES Modules via CDN) -->
@@ -2221,6 +2614,12 @@
             </div>
         </div>
 
+        <!-- T051: Tab Navigation -->
+        <div class="view-tabs">
+            <button class="view-tab-btn active" onclick="switchTab('projects')">📁 项目管理</button>
+            <button class="view-tab-btn" onclick="switchTab('commands')">📋 命令库</button>
+        </div>
+
         <!-- 工具栏 -->
         <div class="tabs-nav" id="tabsNav">
             <button class="add-project-btn" onclick="openAddProjectModal()">➕ 新建项目</button>
@@ -2231,14 +2630,32 @@
             </div>
         </div>
 
-        <!-- 主布局：左侧项目树 + 右侧内容区 -->
-        <div class="main-layout" id="mainLayout">
+        <!-- T052-T053: Command Library Tab (initially hidden) -->
+        <div id="commands-tab" class="tab-content" style="display: none;">
+            <div class="commands-header">
+                <div class="search-container">
+                    <input type="text"
+                           id="commandSearchInput"
+                           class="command-search-input"
+                           placeholder="🔍 搜索命令（标签、文本或分类）..."
+                           oninput="handleSearchCommands(this.value)">
+                </div>
+                <button class="add-command-btn" onclick="handleAddCommand()">➕ 添加命令</button>
+            </div>
+            <div id="command-list" class="command-list"></div>
+        </div>
+
+        <!-- Projects Tab (main layout) -->
+        <div id="projects-tab" class="tab-content" style="display: block;">
+            <!-- 主布局：左侧项目树 + 右侧内容区 -->
+            <div class="main-layout" id="mainLayout">
             <!-- 左侧项目树 -->
             <div class="project-tree-sidebar" id="projectTree"></div>
 
             <!-- 右侧主内容区 -->
             <div class="main-content-area" id="mainContent"></div>
-        </div>
+            </div> <!-- end main-layout -->
+        </div> <!-- end projects-tab -->
 
         <!-- 新建项目模态框 -->
         <div class="modal" id="addProjectModal">
@@ -2889,11 +3306,13 @@
                     const projectsArray = Object.values(projectsObj);
                     console.log(`✅ Loaded ${projectsArray.length} projects from Firebase`);
 
-                    // Update local projects array
-                    projects = projectsArray;
+                    // BUGFIX: Migrate project schema for backward compatibility
+                    // Ensure all projects have required fields (description, updatedAt)
+                    // and all iterations have required fields (completedSteps, inputs, notes, etc.)
+                    projects = projectsArray.map(migrateProjectSchema);
                     renderAllViews();
 
-                    return projectsArray;
+                    return projects; // Return migrated projects
                 } else {
                     console.log('ℹ️ No projects found in Firebase');
 
@@ -3102,6 +3521,7 @@
 
         // 项目数据存储
         let projects = [];
+        let commands = []; // T006/T007: Command Library storage
         let currentTab = 'overview';
         let currentProjectId = null;
         let currentIterationId = null;
@@ -3706,13 +4126,45 @@
                 const isExpanded = expandedProjects.has(project.id);
                 const isSelected = selectedProjectId === project.id && !selectedIterationId;
 
+                // T033: Call progressCalculation* functions to get metrics
+                const iterationCount = progressCalculationGetIterationCount(project);
+                const completionPercentage = progressCalculationGetCompletionPercentage(project);
+                const lastUpdated = progressCalculationGetLastUpdated(project);
+                const relativeTime = progressCalculationFormatRelativeTime(lastUpdated);
+
+                // T038: Visual indicators for completion status
+                const isComplete = completionPercentage === 100;
+                const isEmpty = completionPercentage === 0;
+                const statusIcon = isComplete ? '✓' : isEmpty ? '○' : '◐';
+                const statusClass = isComplete ? 'complete' : isEmpty ? 'empty' : 'in-progress';
+
                 html += `
                     <div class="project-tree-item">
-                        <div class="project-tree-node ${isSelected ? 'active' : ''}" onclick="selectProject('${project.id}')">
+                        <div class="project-tree-node ${isSelected ? 'active' : ''}" onclick="handleProjectClick('${project.id}')">
                             <div class="expand-icon ${isExpanded ? 'expanded' : ''}" onclick="event.stopPropagation(); toggleProject('${project.id}')">
                                 ▶
                             </div>
-                            <div class="project-tree-label" title="${project.name}">${project.name}</div>
+                            <div class="project-tree-content">
+                                <div class="project-tree-label" title="${project.name}">${project.name}</div>
+                                <!-- T033-T034: Progress information -->
+                                <div class="progress-info">
+                                    <div class="progress-metrics">
+                                        <span class="iteration-count" title="${iterationCount} 个迭代">${iterationCount} 迭代</span>
+                                        <span class="completion-badge ${statusClass}" title="完成度: ${completionPercentage}%">${statusIcon} ${completionPercentage}%</span>
+                                    </div>
+                                    <!-- T034: Progress bar visualization -->
+                                    <div class="progress-bar">
+                                        <div class="progress-bar-fill ${statusClass}" style="width: ${completionPercentage}%"></div>
+                                    </div>
+                                    <div class="last-updated" title="最后更新: ${lastUpdated}">更新: ${relativeTime}</div>
+                                </div>
+                            </div>
+                            <!-- T020: Project action buttons -->
+                            <div class="project-actions" onclick="event.stopPropagation();">
+                                <button class="project-action-btn" onclick="handleEditProject('${project.id}')" title="Edit project">✏️</button>
+                                <button class="project-action-btn" onclick="handleDuplicateProject('${project.id}')" title="Duplicate project">📋</button>
+                                <button class="project-action-btn project-action-delete" onclick="handleDeleteProject('${project.id}')" title="Delete project">🗑️</button>
+                            </div>
                         </div>
                         <div class="project-tree-children ${isExpanded ? 'expanded' : ''}">
                             ${renderIterationTreeNodes(project)}
@@ -3905,8 +4357,9 @@
             return `
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #e5e7eb;">
-                        <div>
+                        <div style="flex: 1;">
                             <h2 style="font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-bottom: 8px;">📦 ${project.name}</h2>
+                            ${project.description ? `<p style="font-size: 0.95rem; color: #64748b; margin-bottom: 8px; line-height: 1.5;">${project.description}</p>` : ''}
                             <div style="font-size: 0.85rem; color: #64748b;">创建于 ${relativeTime}</div>
                         </div>
                         <div style="display: flex; gap: 12px;">
@@ -3948,6 +4401,120 @@
             `;
         }
 
+        /**
+         * T054: Render Command Library grouped by category
+         * 渲染按分类分组的命令库
+         * @param {Array} commandsToRender - Optional filtered command array (defaults to global commands)
+         */
+        function renderCommandLibrary(commandsToRender = commands) {
+            const container = document.getElementById('command-list');
+            if (!container) return;
+
+            // Group commands by category
+            const grouped = {};
+            commandsToRender.forEach(cmd => {
+                const category = cmd.category || 'Uncategorized';
+                if (!grouped[category]) {
+                    grouped[category] = [];
+                }
+                grouped[category].push(cmd);
+            });
+
+            // Empty state
+            if (commandsToRender.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px; color: #94a3b8;">
+                        <div style="font-size: 4rem; margin-bottom: 16px; opacity: 0.6;">📋</div>
+                        <div style="font-size: 1.1rem; margin-bottom: 8px;">暂无命令</div>
+                        <div style="font-size: 0.9rem;">点击"添加命令"开始创建您的命令库</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Render grouped commands
+            let html = '';
+            Object.keys(grouped).sort().forEach(category => {
+                html += `<div class="command-category">
+                    <div class="command-category-header">${category}</div>
+                `;
+
+                grouped[category].forEach(cmd => {
+                    // T055: Add draggable attributes
+                    const truncatedText = cmd.text.length > 100
+                        ? cmd.text.substring(0, 100) + '...'
+                        : cmd.text;
+
+                    html += `
+                        <div class="command-item"
+                             draggable="true"
+                             ondragstart="handleDragStart(event, '${cmd.id}')"
+                             ondragover="handleDragOver(event)"
+                             ondrop="handleDrop(event, '${cmd.id}')">
+                            <div class="command-info">
+                                <div class="command-label">${cmd.label}</div>
+                                <div class="command-text" title="${cmd.text}">${truncatedText}</div>
+                            </div>
+                            <div class="command-actions">
+                                <button class="command-action-btn copy-btn"
+                                        onclick="handleCopyCommand('${cmd.id}')"
+                                        title="复制">
+                                    📋
+                                </button>
+                                <button class="command-action-btn edit-btn"
+                                        onclick="handleEditCommand('${cmd.id}')"
+                                        title="编辑">
+                                    ✏️
+                                </button>
+                                <button class="command-action-btn delete-btn"
+                                        onclick="handleDeleteCommand('${cmd.id}')"
+                                        title="删除">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+            });
+
+            container.innerHTML = html;
+        }
+
+        /**
+         * T056: Show toast notification
+         * 显示提示通知
+         * @param {string} message - Message to display
+         * @param {string} type - Toast type: 'success' | 'error' | 'info'
+         */
+        function showToast(message, type = 'info') {
+            // Remove existing toast if any
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+
+            // Create toast
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            // Show with animation
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10);
+
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }
+
         function renderIterationCard(project, iteration) {
             // Defensive check
             const completedSteps = iteration.completedSteps
@@ -3979,9 +4546,16 @@
             `;
         }
 
+        /**
+         * T073: Update initializeApp() to call loadProjects(), loadCommands(), renderProjectSidebar() in correct order
+         * 更新 initializeApp() 以正确顺序调用 loadProjects()、loadCommands()、renderProjectSidebar()
+         */
         // 初始化
         function init() {
-            loadProjects();
+            // Load data from storage
+            loadProjects();  // Load projects first
+            loadCommands();  // Load commands library
+
             // 默认展开第一个项目并选中第一个迭代
             if (projects.length > 0) {
                 selectedProjectId = projects[0].id;
@@ -3990,8 +4564,69 @@
                     selectedIterationId = projects[0].iterations[0].id;
                 }
             }
-            renderProjectTree();
-            renderMainContent();
+
+            // Render UI components
+            renderProjectTree();      // Render project sidebar
+            renderMainContent();       // Render main content area
+            // renderCommandLibrary() will be called automatically when user switches to Commands tab
+        }
+
+        // ===========================
+        // DATA ACCESS LAYER
+        // ===========================
+
+        /**
+         * T004: Migrate project schema for backward compatibility
+         * 迁移项目数据模型以保持向后兼容
+         * @param {Object} project - Project object to migrate
+         * @returns {Object} - Migrated project
+         */
+        function migrateProjectSchema(project) {
+            // Add missing 'description' field (FR-002)
+            if (!project.description) {
+                project.description = '';
+            }
+
+            // Add missing 'updatedAt' field (data-model.md requirement)
+            if (!project.updatedAt) {
+                // Use createdAt as fallback, or current time if createdAt missing
+                project.updatedAt = project.createdAt || new Date().toISOString();
+            }
+
+            // BUGFIX: Migrate iteration schema for backward compatibility
+            // Ensure all iterations have required fields to prevent "undefined" errors
+            if (project.iterations && Array.isArray(project.iterations)) {
+                project.iterations = project.iterations.map(iteration => {
+                    // Ensure completedSteps exists
+                    if (!iteration.completedSteps || typeof iteration.completedSteps !== 'object') {
+                        iteration.completedSteps = {};
+                    }
+
+                    // Ensure inputs exists
+                    if (!iteration.inputs || typeof iteration.inputs !== 'object') {
+                        iteration.inputs = {};
+                    }
+
+                    // Ensure notes exists
+                    if (!iteration.notes || typeof iteration.notes !== 'object') {
+                        iteration.notes = {};
+                    }
+
+                    // Ensure currentCycle exists
+                    if (!iteration.currentCycle) {
+                        iteration.currentCycle = 'init';
+                    }
+
+                    // Ensure cycleHistory exists
+                    if (!iteration.cycleHistory || typeof iteration.cycleHistory !== 'object') {
+                        iteration.cycleHistory = {};
+                    }
+
+                    return iteration;
+                });
+            }
+
+            return project;
         }
 
         // 加载项目数据
@@ -3999,6 +4634,10 @@
             const saved = localStorage.getItem('speckit_projects');
             if (saved) {
                 projects = JSON.parse(saved);
+
+                // T005: Apply migration for backward compatibility
+                projects = projects.map(migrateProjectSchema);
+
                 // 确保每个项目有迭代数据
                 projects.forEach(project => {
                     if (!project.iterations) {
@@ -4053,6 +4692,669 @@
             }
         }
 
+        /**
+         * T006: Save commands to localStorage
+         * 保存命令库到 localStorage
+         * @returns {void}
+         */
+        /**
+         * T072: Update saveCommands() to sync to Firebase if user authenticated
+         * 更新 saveCommands() 以在用户通过身份验证时同步到 Firebase
+         */
+        async function saveCommands() {
+            // Always save to localStorage first (offline backup)
+            try {
+                localStorage.setItem('speckit_commands', JSON.stringify(commands));
+                console.log('💾 Commands saved to localStorage');
+            } catch (error) {
+                console.error('❌ Failed to save commands to localStorage:', error);
+            }
+
+            // If user is authenticated, also save to Firebase
+            if (currentUser && firebaseInitialized) {
+                try {
+                    const db = getDatabase();
+                    const commandsRef = ref(db, `users/${currentUser.uid}/commands`);
+                    await set(commandsRef, commands);
+                    console.log('☁️ Commands synced to Firebase');
+                } catch (error) {
+                    console.error('❌ Failed to sync commands to Firebase:', error);
+                    // Don't block - localStorage is primary storage
+                }
+            }
+        }
+
+        /**
+         * T007: Load commands from localStorage
+         * 从 localStorage 加载命令库
+         * @returns {void}
+         */
+        function loadCommands() {
+            try {
+                const saved = localStorage.getItem('speckit_commands');
+                if (saved) {
+                    commands = JSON.parse(saved);
+                    console.log(`📦 Loaded ${commands.length} commands from localStorage`);
+                } else {
+                    // T050: Seed defaults on first use
+                    commands = commandLibrarySeedDefaults();
+                    saveCommands(); // Persist the defaults
+                    console.log(`🌱 Seeded ${commands.length} default commands`);
+                }
+            } catch (error) {
+                console.error('❌ Failed to load commands:', error);
+                commands = [];
+            }
+        }
+
+        // ===========================
+        // BUSINESS LOGIC LAYER
+        // ===========================
+
+        // --- Validation Module (validate*) ---
+
+        /**
+         * T014: Validate project name
+         * 验证项目名称
+         * @param {string} name - Project name to validate
+         * @returns {Object} - {valid: boolean, error?: string}
+         */
+        function validateProjectName(name) {
+            if (!name || typeof name !== 'string') {
+                return {valid: false, error: 'Project name is required'};
+            }
+
+            const trimmed = name.trim();
+            if (trimmed.length === 0) {
+                return {valid: false, error: 'Project name cannot be empty'};
+            }
+
+            if (trimmed.length > 100) {
+                return {valid: false, error: 'Project name cannot exceed 100 characters'};
+            }
+
+            return {valid: true};
+        }
+
+        /**
+         * T015: Validate project description
+         * 验证项目描述
+         * @param {string} description - Project description to validate
+         * @returns {Object} - {valid: boolean, error?: string}
+         */
+        function validateProjectDescription(description) {
+            // Description is optional
+            if (!description) {
+                return {valid: true};
+            }
+
+            if (description.length > 500) {
+                return {valid: false, error: 'Description cannot exceed 500 characters'};
+            }
+
+            return {valid: true};
+        }
+
+        // --- Project CRUD Module (projectCRUD*) ---
+
+        /**
+         * T016: Generate unique project name for duplicates
+         * 为复制的项目生成唯一名称
+         * @param {string} baseName - Original project name
+         * @returns {string} - Unique name (e.g., "Project (Copy)", "Project (Copy 2)")
+         */
+        function projectCRUDGenerateUniqueName(baseName) {
+            // Start with "Project Name (Copy)"
+            let candidateName = `${baseName} (Copy)`;
+            let counter = 2;
+
+            // Check if name exists
+            while (projects.some(p => p.name === candidateName)) {
+                candidateName = `${baseName} (Copy ${counter})`;
+                counter++;
+            }
+
+            return candidateName;
+        }
+
+        /**
+         * T017: Edit project name and description
+         * 编辑项目名称和描述
+         * @param {string} projectId - Project ID
+         * @param {string} newName - New project name
+         * @param {string} newDescription - New project description
+         * @returns {Object} - {success: boolean, error?: string}
+         */
+        function projectCRUDEdit(projectId, newName, newDescription) {
+            // Validate inputs
+            const nameValidation = validateProjectName(newName);
+            if (!nameValidation.valid) {
+                return {success: false, error: nameValidation.error};
+            }
+
+            const descValidation = validateProjectDescription(newDescription);
+            if (!descValidation.valid) {
+                return {success: false, error: descValidation.error};
+            }
+
+            // Find project
+            const project = projects.find(p => p.id === projectId);
+            if (!project) {
+                return {success: false, error: 'Project not found'};
+            }
+
+            // Update project
+            project.name = newName.trim();
+            project.description = newDescription || '';
+            project.updatedAt = new Date().toISOString();
+
+            // Save to storage
+            saveProjects();
+
+            return {success: true};
+        }
+
+        /**
+         * T018: Duplicate project with all iterations
+         * 复制项目及其所有迭代
+         * @param {string} projectId - Source project ID
+         * @returns {Object} - {success: boolean, newProjectId?: string, error?: string}
+         */
+        function projectCRUDDuplicate(projectId) {
+            // Find source project
+            const project = projects.find(p => p.id === projectId);
+            if (!project) {
+                return {success: false, error: 'Project not found'};
+            }
+
+            // Deep copy using JSON
+            const copiedProject = JSON.parse(JSON.stringify(project));
+
+            // Generate new IDs
+            copiedProject.id = 'project_' + Date.now();
+            copiedProject.name = projectCRUDGenerateUniqueName(project.name);
+            copiedProject.createdAt = new Date().toISOString();
+            copiedProject.updatedAt = new Date().toISOString();
+
+            // Generate new IDs for all iterations
+            copiedProject.iterations = copiedProject.iterations.map((iter, index) => ({
+                ...iter,
+                id: `${copiedProject.id}_iteration_${Date.now()}_${index}`
+            }));
+
+            // Add to projects array
+            projects.push(copiedProject);
+            saveProjects();
+
+            return {success: true, newProjectId: copiedProject.id};
+        }
+
+        /**
+         * T019: Delete project after confirmation
+         * 删除项目（需确认）
+         * @param {string} projectId - Project ID to delete
+         * @returns {Object} - {success: boolean, confirmed: boolean, error?: string}
+         */
+        function projectCRUDDelete(projectId) {
+            // Find project
+            const project = projects.find(p => p.id === projectId);
+            if (!project) {
+                return {success: false, confirmed: false, error: 'Project not found'};
+            }
+
+            // Confirm deletion
+            const confirmed = confirm(`Are you sure you want to delete "${project.name}"? This action cannot be undone.`);
+            if (!confirmed) {
+                return {success: false, confirmed: false};
+            }
+
+            // Remove project
+            projects = projects.filter(p => p.id !== projectId);
+            saveProjects();
+
+            return {success: true, confirmed: true};
+        }
+
+        // --- Command Library Module (commandLibrary*) ---
+
+        /**
+         * T041: Seed default commands for Command Library
+         * 为命令库提供默认命令
+         * @returns {Array} - Array of default command objects
+         */
+        function commandLibrarySeedDefaults() {
+            return [
+                {
+                    id: 'cmd_default_1',
+                    label: '/speckit.specify - 创建规格说明',
+                    text: '/speckit.specify [feature description]',
+                    category: 'Spec Kit Workflow',
+                    createdAt: new Date().toISOString(),
+                    order: 1
+                },
+                {
+                    id: 'cmd_default_2',
+                    label: '/speckit.plan - 生成实施计划',
+                    text: '/speckit.plan',
+                    category: 'Spec Kit Workflow',
+                    createdAt: new Date().toISOString(),
+                    order: 2
+                },
+                {
+                    id: 'cmd_default_3',
+                    label: '/speckit.tasks - 生成任务清单',
+                    text: '/speckit.tasks',
+                    category: 'Spec Kit Workflow',
+                    createdAt: new Date().toISOString(),
+                    order: 3
+                },
+                {
+                    id: 'cmd_default_4',
+                    label: '/speckit.implement - 执行实施',
+                    text: '/speckit.implement',
+                    category: 'Spec Kit Workflow',
+                    createdAt: new Date().toISOString(),
+                    order: 4
+                },
+                {
+                    id: 'cmd_default_5',
+                    label: 'Git: 查看状态',
+                    text: 'git status',
+                    category: 'Git Commands',
+                    createdAt: new Date().toISOString(),
+                    order: 5
+                },
+                {
+                    id: 'cmd_default_6',
+                    label: 'Git: 提交所有更改',
+                    text: 'git add . && git commit -m "Update" && git push',
+                    category: 'Git Commands',
+                    createdAt: new Date().toISOString(),
+                    order: 6
+                },
+                {
+                    id: 'cmd_default_7',
+                    label: 'Docker: 查看运行容器',
+                    text: 'docker ps',
+                    category: 'Docker Commands',
+                    createdAt: new Date().toISOString(),
+                    order: 7
+                },
+                {
+                    id: 'cmd_default_8',
+                    label: 'Docker: 停止所有容器',
+                    text: 'docker stop $(docker ps -aq)',
+                    category: 'Docker Commands',
+                    createdAt: new Date().toISOString(),
+                    order: 8
+                },
+                {
+                    id: 'cmd_default_9',
+                    label: 'NPM: 安装依赖',
+                    text: 'npm install',
+                    category: 'NPM Commands',
+                    createdAt: new Date().toISOString(),
+                    order: 9
+                },
+                {
+                    id: 'cmd_default_10',
+                    label: 'NPM: 运行开发服务器',
+                    text: 'npm run dev',
+                    category: 'NPM Commands',
+                    createdAt: new Date().toISOString(),
+                    order: 10
+                }
+            ];
+        }
+
+        /**
+         * T042: Validate command label
+         * 验证命令标签
+         * @param {string} label - Command label to validate
+         * @returns {Object} - {valid: boolean, error?: string}
+         */
+        function validateCommandLabel(label) {
+            if (!label || typeof label !== 'string') {
+                return {valid: false, error: 'Command label is required'};
+            }
+
+            const trimmed = label.trim();
+            if (trimmed.length === 0) {
+                return {valid: false, error: 'Command label cannot be empty'};
+            }
+
+            if (trimmed.length > 100) {
+                return {valid: false, error: 'Command label cannot exceed 100 characters'};
+            }
+
+            return {valid: true};
+        }
+
+        /**
+         * T043: Validate command text
+         * 验证命令文本
+         * @param {string} text - Command text to validate
+         * @returns {Object} - {valid: boolean, error?: string}
+         */
+        function validateCommandText(text) {
+            if (!text || typeof text !== 'string') {
+                return {valid: false, error: 'Command text is required'};
+            }
+
+            const trimmed = text.trim();
+            if (trimmed.length === 0) {
+                return {valid: false, error: 'Command text cannot be empty'};
+            }
+
+            if (trimmed.length > 1000) {
+                return {valid: false, error: 'Command text cannot exceed 1000 characters'};
+            }
+
+            return {valid: true};
+        }
+
+        /**
+         * T044: Add new command to library
+         * 添加新命令到库
+         * @param {string} label - Command label
+         * @param {string} text - Command text
+         * @param {string} category - Optional category
+         * @returns {Object} - {success: boolean, error?: string, commandId?: string}
+         */
+        function commandLibraryAdd(label, text, category = '') {
+            // Validate inputs
+            const labelValidation = validateCommandLabel(label);
+            if (!labelValidation.valid) {
+                return {success: false, error: labelValidation.error};
+            }
+
+            const textValidation = validateCommandText(text);
+            if (!textValidation.valid) {
+                return {success: false, error: textValidation.error};
+            }
+
+            // Create new command
+            const newCommand = {
+                id: 'cmd_' + Date.now(),
+                label: label.trim(),
+                text: text.trim(),
+                category: category.trim(),
+                createdAt: new Date().toISOString(),
+                order: commands.length + 1
+            };
+
+            // Add to commands array
+            commands.push(newCommand);
+            saveCommands();
+
+            return {success: true, commandId: newCommand.id};
+        }
+
+        /**
+         * T045: Edit existing command
+         * 编辑现有命令
+         * @param {string} commandId - Command ID to edit
+         * @param {string} newLabel - New label
+         * @param {string} newText - New command text
+         * @param {string} newCategory - New category
+         * @returns {Object} - {success: boolean, error?: string}
+         */
+        function commandLibraryEdit(commandId, newLabel, newText, newCategory = '') {
+            // Find command
+            const command = commands.find(c => c.id === commandId);
+            if (!command) {
+                return {success: false, error: 'Command not found'};
+            }
+
+            // Validate inputs
+            const labelValidation = validateCommandLabel(newLabel);
+            if (!labelValidation.valid) {
+                return {success: false, error: labelValidation.error};
+            }
+
+            const textValidation = validateCommandText(newText);
+            if (!textValidation.valid) {
+                return {success: false, error: textValidation.error};
+            }
+
+            // Update command
+            command.label = newLabel.trim();
+            command.text = newText.trim();
+            command.category = newCategory.trim();
+            saveCommands();
+
+            return {success: true};
+        }
+
+        /**
+         * T046: Delete command from library
+         * 从库中删除命令
+         * @param {string} commandId - Command ID to delete
+         * @returns {Object} - {success: boolean, error?: string}
+         */
+        function commandLibraryDelete(commandId) {
+            // Find command
+            const index = commands.findIndex(c => c.id === commandId);
+            if (index === -1) {
+                return {success: false, error: 'Command not found'};
+            }
+
+            // Remove command
+            commands.splice(index, 1);
+            saveCommands();
+
+            return {success: true};
+        }
+
+        /**
+         * T047: Copy command text to clipboard
+         * 复制命令文本到剪贴板
+         * @param {string} commandText - Command text to copy
+         * @returns {Promise<Object>} - {success: boolean, error?: string}
+         */
+        async function commandLibraryCopy(commandText) {
+            try {
+                // Try Clipboard API first
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(commandText);
+                    return {success: true};
+                }
+
+                // Fallback: use textarea method
+                const textarea = document.createElement('textarea');
+                textarea.value = commandText;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+
+                const success = document.execCommand('copy');
+                document.body.removeChild(textarea);
+
+                if (success) {
+                    return {success: true};
+                } else {
+                    return {success: false, error: 'Failed to copy to clipboard'};
+                }
+            } catch (error) {
+                return {success: false, error: error.message};
+            }
+        }
+
+        /**
+         * T048: Search/filter commands
+         * 搜索/过滤命令
+         * @param {string} searchTerm - Search term
+         * @returns {Array} - Filtered command array
+         */
+        function commandLibrarySearch(searchTerm) {
+            if (!searchTerm || searchTerm.trim().length === 0) {
+                return commands;
+            }
+
+            const term = searchTerm.toLowerCase().trim();
+            return commands.filter(cmd => {
+                return cmd.label.toLowerCase().includes(term) ||
+                       cmd.text.toLowerCase().includes(term) ||
+                       cmd.category.toLowerCase().includes(term);
+            });
+        }
+
+        /**
+         * T049: Reorder commands via drag-drop
+         * 通过拖放重新排序命令
+         * @param {string} sourceCommandId - Source command ID
+         * @param {string} targetCommandId - Target command ID
+         * @returns {Object} - {success: boolean, error?: string}
+         */
+        function commandLibraryReorder(sourceCommandId, targetCommandId) {
+            // Find commands
+            const sourceIndex = commands.findIndex(c => c.id === sourceCommandId);
+            const targetIndex = commands.findIndex(c => c.id === targetCommandId);
+
+            if (sourceIndex === -1 || targetIndex === -1) {
+                return {success: false, error: 'Command not found'};
+            }
+
+            // Remove source command
+            const [sourceCommand] = commands.splice(sourceIndex, 1);
+
+            // Insert at target position
+            const newTargetIndex = sourceIndex < targetIndex ? targetIndex - 1 : targetIndex;
+            commands.splice(newTargetIndex, 0, sourceCommand);
+
+            // Update order values
+            commands.forEach((cmd, index) => {
+                cmd.order = index + 1;
+            });
+
+            saveCommands();
+            return {success: true};
+        }
+
+        // --- Progress Calculation Module (progressCalculation*) ---
+
+        /**
+         * T028: Check if iteration is complete
+         * 检查迭代是否完成
+         * @param {Object} iteration - Iteration object to check
+         * @returns {boolean} - True if all required steps are completed
+         */
+        function progressCalculationIsIterationComplete(iteration) {
+            // Defensive check
+            if (!iteration || !iteration.completedSteps) {
+                return false;
+            }
+
+            // Check if all command steps are completed
+            const completedCount = Object.values(iteration.completedSteps).filter(v => v === true).length;
+            return completedCount === commandSteps.length;
+        }
+
+        /**
+         * T029: Get iteration count for a project
+         * 获取项目的迭代数量
+         * @param {Object} project - Project object
+         * @returns {number} - Number of iterations
+         */
+        function progressCalculationGetIterationCount(project) {
+            // Defensive check
+            if (!project || !Array.isArray(project.iterations)) {
+                return 0;
+            }
+
+            return project.iterations.length;
+        }
+
+        /**
+         * T030: Calculate completion percentage for a project
+         * 计算项目的完成百分比
+         * @param {Object} project - Project object
+         * @returns {number} - Completion percentage (0-100), rounded to nearest integer
+         */
+        function progressCalculationGetCompletionPercentage(project) {
+            // Defensive check
+            if (!project || !Array.isArray(project.iterations) || project.iterations.length === 0) {
+                return 0; // Division-by-zero handling
+            }
+
+            // Count completed iterations
+            let completedIterations = 0;
+            project.iterations.forEach(iteration => {
+                if (progressCalculationIsIterationComplete(iteration)) {
+                    completedIterations++;
+                }
+            });
+
+            // Calculate percentage
+            const percentage = (completedIterations / project.iterations.length) * 100;
+            return Math.round(percentage);
+        }
+
+        /**
+         * T031: Get last updated timestamp for a project
+         * 获取项目的最后更新时间戳
+         * @param {Object} project - Project object
+         * @returns {string} - ISO8601 timestamp
+         */
+        function progressCalculationGetLastUpdated(project) {
+            // Defensive check
+            if (!project) {
+                return new Date().toISOString();
+            }
+
+            // Return updatedAt if available, otherwise createdAt, otherwise current time
+            return project.updatedAt || project.createdAt || new Date().toISOString();
+        }
+
+        /**
+         * T032: Format relative time with 30-day threshold
+         * 格式化相对时间（30天阈值）
+         * @param {string} isoTimestamp - ISO8601 timestamp string
+         * @returns {string} - Formatted relative time or absolute date
+         */
+        function progressCalculationFormatRelativeTime(isoTimestamp) {
+            // Defensive check
+            if (!isoTimestamp) {
+                return 'Unknown';
+            }
+
+            try {
+                const date = new Date(isoTimestamp);
+                const now = new Date();
+                const diffMs = now - date;
+                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+                // If older than 30 days, show absolute date
+                if (diffDays > 30) {
+                    return date.toLocaleDateString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                    });
+                }
+
+                // Otherwise show relative time
+                if (diffDays > 0) {
+                    return `${diffDays} 天前`;
+                }
+
+                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                if (diffHours > 0) {
+                    return `${diffHours} 小时前`;
+                }
+
+                const diffMinutes = Math.floor(diffMs / (1000 * 60));
+                if (diffMinutes > 0) {
+                    return `${diffMinutes} 分钟前`;
+                }
+
+                return '刚刚';
+            } catch (error) {
+                console.error('Error formatting relative time:', error);
+                return 'Unknown';
+            }
+        }
 
         // 渲染迭代工作流
         function renderIterationWorkflow(project, iteration) {
@@ -4337,6 +5639,382 @@
             renderMainContent();
             showToast(`✅ 已删除项目"${project.name}"`, 'success');
         }
+
+        // ============================================
+        // T023-T025: NEW CRUD EVENT HANDLERS (User Story 1)
+        // ============================================
+
+        /**
+         * T023: Handle edit project (inline edit)
+         * 处理编辑项目（内联编辑）
+         * @param {string} projectId - Project ID to edit
+         */
+        function handleEditProject(projectId) {
+            const project = projects.find(p => p.id === projectId);
+            if (!project) {
+                showToast('Project not found', 'error');
+                return;
+            }
+
+            // Prompt for new name
+            const newName = prompt('Edit project name:', project.name);
+            if (newName === null) return; // User cancelled
+
+            // Prompt for new description
+            const newDescription = prompt('Edit project description (optional):', project.description || '');
+            if (newDescription === null) return; // User cancelled
+
+            // Call business logic
+            const result = projectCRUDEdit(projectId, newName, newDescription);
+
+            if (!result.success) {
+                showToast(`❌ ${result.error}`, 'error');
+                return;
+            }
+
+            // Update UI
+            renderProjectTree();
+            if (selectedProjectId === projectId) {
+                renderMainContent();
+            }
+            showToast(`✅ Project "${project.name}" updated`, 'success');
+        }
+
+        /**
+         * T024: Handle duplicate project
+         * 处理复制项目
+         * @param {string} projectId - Project ID to duplicate
+         */
+        function handleDuplicateProject(projectId) {
+            const result = projectCRUDDuplicate(projectId);
+
+            if (!result.success) {
+                showToast(`❌ ${result.error}`, 'error');
+                return;
+            }
+
+            // Automatically select and expand the new project
+            selectedProjectId = result.newProjectId;
+            const newProject = projects.find(p => p.id === result.newProjectId);
+            if (newProject && newProject.iterations.length > 0) {
+                selectedIterationId = newProject.iterations[0].id;
+            }
+            expandedProjects.add(result.newProjectId);
+
+            // Update UI
+            renderProjectTree();
+            renderMainContent();
+            showToast(`✅ Project duplicated: "${newProject.name}"`, 'success');
+        }
+
+        /**
+         * T025: Handle delete project with confirmation
+         * 处理删除项目（带确认）
+         * @param {string} projectId - Project ID to delete
+         */
+        function handleDeleteProject(projectId) {
+            const result = projectCRUDDelete(projectId);
+
+            if (!result.confirmed) {
+                // User cancelled or project not found
+                if (result.error) {
+                    showToast(`❌ ${result.error}`, 'error');
+                }
+                return;
+            }
+
+            // Handle UI state if deleted project was currently selected
+            if (selectedProjectId === projectId) {
+                if (projects.length > 0) {
+                    // Select first available project
+                    selectedProjectId = projects[0].id;
+                    selectedIterationId = projects[0].iterations[0]?.id || null;
+                    expandedProjects.add(projects[0].id);
+                } else {
+                    // No projects left
+                    selectedProjectId = null;
+                    selectedIterationId = null;
+                }
+            }
+
+            // Remove from expanded set
+            expandedProjects.delete(projectId);
+
+            // Update UI
+            renderProjectTree();
+            renderMainContent();
+            showToast('✅ Project deleted successfully', 'success');
+        }
+
+        // ============================================
+        // END NEW CRUD EVENT HANDLERS
+        // ============================================
+
+        /**
+         * T039: Handle project click for navigation with smooth scroll
+         * 处理项目点击以进行导航和平滑滚动
+         * @param {string} projectId - Project ID to navigate to
+         */
+        function handleProjectClick(projectId) {
+            // Set selected project
+            selectedProjectId = projectId;
+            selectedIterationId = null;
+
+            // Expand the project if it has iterations
+            const project = projects.find(p => p.id === projectId);
+            if (project && project.iterations.length > 0) {
+                expandedProjects.add(projectId);
+                // Auto-select first iteration if available
+                selectedIterationId = project.iterations[0].id;
+            }
+
+            // Update UI
+            renderProjectTree();
+            renderMainContent();
+
+            // Smooth scroll to main content area
+            setTimeout(() => {
+                const mainContent = document.getElementById('mainContent');
+                if (mainContent) {
+                    mainContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+        }
+
+        // ============================================
+        // COMMAND LIBRARY EVENT HANDLERS (T062-T070)
+        // ============================================
+
+        /**
+         * T062: Handle add command with prompt dialogs
+         * 处理添加命令，使用提示对话框获取输入
+         */
+        function handleAddCommand() {
+            // Prompt for label
+            const label = prompt('请输入命令标签（例如："创建规格说明"）:');
+            if (!label) {
+                return; // User cancelled
+            }
+
+            // Prompt for text
+            const text = prompt('请输入命令文本（例如："/speckit.specify [description]"）:');
+            if (!text) {
+                return; // User cancelled
+            }
+
+            // Prompt for optional category
+            const category = prompt('请输入分类（可选，例如："Spec Kit Workflow"、"Git"）:', '');
+
+            // Call business logic
+            const result = commandLibraryAdd(label, text, category || '');
+
+            if (result.success) {
+                showToast('✅ 命令已添加', 'success');
+                renderCommandLibrary(); // Re-render to show new command
+            } else {
+                showToast(`❌ 添加失败: ${result.error}`, 'error');
+            }
+        }
+
+        /**
+         * T063: Handle edit command with prompt dialogs
+         * 处理编辑命令，使用提示对话框获取新值
+         * @param {string} commandId - Command ID to edit
+         */
+        function handleEditCommand(commandId) {
+            // Find the command
+            const command = commands.find(c => c.id === commandId);
+            if (!command) {
+                showToast('❌ 命令不存在', 'error');
+                return;
+            }
+
+            // Prompt for new label
+            const newLabel = prompt('请输入新的命令标签:', command.label);
+            if (newLabel === null) {
+                return; // User cancelled
+            }
+
+            // Prompt for new text
+            const newText = prompt('请输入新的命令文本:', command.text);
+            if (newText === null) {
+                return; // User cancelled
+            }
+
+            // Prompt for new category
+            const newCategory = prompt('请输入新的分类（可选）:', command.category);
+            if (newCategory === null) {
+                return; // User cancelled
+            }
+
+            // Call business logic
+            const result = commandLibraryEdit(commandId, newLabel, newText, newCategory);
+
+            if (result.success) {
+                showToast('✅ 命令已更新', 'success');
+                renderCommandLibrary(); // Re-render to show updated command
+            } else {
+                showToast(`❌ 更新失败: ${result.error}`, 'error');
+            }
+        }
+
+        /**
+         * T064: Handle delete command with confirmation
+         * 处理删除命令，带确认对话框
+         * @param {string} commandId - Command ID to delete
+         */
+        function handleDeleteCommand(commandId) {
+            // Find the command for confirmation message
+            const command = commands.find(c => c.id === commandId);
+            if (!command) {
+                showToast('❌ 命令不存在', 'error');
+                return;
+            }
+
+            // Confirm deletion
+            const confirmed = confirm(`确定要删除命令 "${command.label}" 吗？\n\n此操作无法撤销。`);
+            if (!confirmed) {
+                return;
+            }
+
+            // Call business logic
+            const result = commandLibraryDelete(commandId);
+
+            if (result.success) {
+                showToast('✅ 命令已删除', 'success');
+                renderCommandLibrary(); // Re-render to remove deleted command
+            } else {
+                showToast(`❌ 删除失败: ${result.error}`, 'error');
+            }
+        }
+
+        /**
+         * T065: Handle copy command to clipboard with toast notification
+         * 处理复制命令到剪贴板，显示提示通知
+         * @param {string} commandId - Command ID to copy
+         */
+        async function handleCopyCommand(commandId) {
+            // Find the command
+            const command = commands.find(c => c.id === commandId);
+            if (!command) {
+                showToast('❌ 命令不存在', 'error');
+                return;
+            }
+
+            // Call business logic (async)
+            const result = await commandLibraryCopy(command.text);
+
+            if (result.success) {
+                showToast('✅ 已复制到剪贴板', 'success');
+            } else {
+                showToast(`❌ 复制失败: ${result.error}`, 'error');
+            }
+        }
+
+        /**
+         * T066: Handle search/filter commands with real-time update
+         * 处理命令搜索/过滤，实时更新显示
+         * @param {string} searchTerm - Search term from input
+         */
+        function handleSearchCommands(searchTerm) {
+            // Call business logic to filter commands
+            const filteredCommands = commandLibrarySearch(searchTerm);
+
+            // Re-render with filtered results
+            renderCommandLibrary(filteredCommands);
+        }
+
+        /**
+         * T067: Handle drag start for command reordering
+         * 处理拖动开始，用于命令重新排序
+         * @param {DragEvent} event - Drag event
+         * @param {string} commandId - Command ID being dragged
+         */
+        function handleDragStart(event, commandId) {
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', commandId);
+            event.target.style.opacity = '0.5';
+        }
+
+        /**
+         * T068: Handle drag over to allow drop
+         * 处理拖动悬停，允许放置
+         * @param {DragEvent} event - Drag event
+         */
+        function handleDragOver(event) {
+            event.preventDefault(); // Allow drop
+            event.dataTransfer.dropEffect = 'move';
+        }
+
+        /**
+         * T069: Handle drop to reorder commands
+         * 处理放置，重新排序命令
+         * @param {DragEvent} event - Drop event
+         * @param {string} targetCommandId - Target command ID
+         */
+        function handleDrop(event, targetCommandId) {
+            event.preventDefault();
+            const sourceCommandId = event.dataTransfer.getData('text/plain');
+
+            // Reset opacity
+            const draggedElement = document.querySelector(`[draggable="true"][ondragstart*="${sourceCommandId}"]`);
+            if (draggedElement) {
+                draggedElement.style.opacity = '1';
+            }
+
+            // Don't reorder if dropped on itself
+            if (sourceCommandId === targetCommandId) {
+                return;
+            }
+
+            // Call business logic
+            const result = commandLibraryReorder(sourceCommandId, targetCommandId);
+
+            if (result.success) {
+                showToast('✅ 命令已重新排序', 'success');
+                renderCommandLibrary(); // Re-render with new order
+            } else {
+                showToast(`❌ 排序失败: ${result.error}`, 'error');
+            }
+        }
+
+        /**
+         * T070: Switch between tabs (Projects and Commands)
+         * 在标签页之间切换（项目和命令）
+         * @param {string} tabName - Tab name: 'projects' or 'commands'
+         */
+        function switchTab(tabName) {
+            // Update tab button states
+            const tabButtons = document.querySelectorAll('.view-tab-btn');
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Find and activate the clicked tab button
+            const activeButton = Array.from(tabButtons).find(btn =>
+                btn.textContent.includes(tabName === 'projects' ? '项目管理' : '命令库')
+            );
+            if (activeButton) {
+                activeButton.classList.add('active');
+            }
+
+            // Show/hide tab content
+            const projectsTab = document.getElementById('projects-tab');
+            const commandsTab = document.getElementById('commands-tab');
+
+            if (tabName === 'projects') {
+                projectsTab.style.display = 'block';
+                commandsTab.style.display = 'none';
+            } else if (tabName === 'commands') {
+                projectsTab.style.display = 'none';
+                commandsTab.style.display = 'block';
+                // Render command library when switching to commands tab
+                renderCommandLibrary();
+            }
+        }
+
+        // END COMMAND LIBRARY EVENT HANDLERS
+        // ============================================
 
         // 打开新建迭代模态框
         function openAddIterationModal(projectId) {
