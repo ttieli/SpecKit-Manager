@@ -5181,7 +5181,7 @@
          * @param {string} projectId - Project ID to delete
          * @returns {Object} - {success: boolean, confirmed: boolean, error?: string}
          */
-        function projectCRUDDelete(projectId) {
+        async function projectCRUDDelete(projectId) {
             // Find project
             const project = projects.find(p => p.id === projectId);
             if (!project) {
@@ -5194,8 +5194,20 @@
                 return {success: false, confirmed: false};
             }
 
-            // Remove project
+            // Remove project from memory
             projects = projects.filter(p => p.id !== projectId);
+
+            // CRITICAL FIX: Delete from Firebase FIRST, then save remaining projects
+            if (currentUser && firebaseInitialized) {
+                try {
+                    await deleteProjectFromFirebase(currentUser.uid, projectId);
+                    console.log(`✅ Project ${projectId} deleted from Firebase`);
+                } catch (error) {
+                    console.error(`❌ Failed to delete project ${projectId} from Firebase:`, error);
+                }
+            }
+
+            // Save remaining projects to localStorage and Firebase
             saveProjects();
 
             return {success: true, confirmed: true};
@@ -6469,8 +6481,8 @@
          * 处理删除项目（带确认）
          * @param {string} projectId - Project ID to delete
          */
-        function handleDeleteProject(projectId) {
-            const result = projectCRUDDelete(projectId);
+        async function handleDeleteProject(projectId) {
+            const result = await projectCRUDDelete(projectId);
 
             if (!result.confirmed) {
                 // User cancelled or project not found
