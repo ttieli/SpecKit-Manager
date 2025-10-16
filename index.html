@@ -4187,20 +4187,48 @@
          */
         function renderStepIndicators(iteration) {
             return commandSteps.map(step => {
-                // Defensive checks
-                const isCompleted = iteration.completedSteps && iteration.completedSteps[step.id] === true;
-                const hasInput = iteration.inputs && iteration.inputs[step.id] && iteration.inputs[step.id].trim().length > 0;
-                const hasNotes = iteration.notes && iteration.notes[step.id] && iteration.notes[step.id].trim().length > 0;
+                // Get current cycle ID (for cycle-keyed data structure - Feature 004-)
+                const currentCycleId = iteration.currentCycle || (iteration.cycles && iteration.cycles[0] && iteration.cycles[0].id);
+
+                // Defensive checks with cycle-keyed structure support
+                const isCompleted = iteration.completedSteps && iteration.completedSteps[step.id] &&
+                                   (currentCycleId ? iteration.completedSteps[step.id][currentCycleId] === true : iteration.completedSteps[step.id] === true);
+
+                // Check if input exists (support both V1 flat structure and V2 cycle-keyed structure)
+                let inputValue = '';
+                if (iteration.inputs && iteration.inputs[step.id]) {
+                    if (currentCycleId && typeof iteration.inputs[step.id] === 'object') {
+                        // V2: cycle-keyed structure
+                        inputValue = iteration.inputs[step.id][currentCycleId] || '';
+                    } else if (typeof iteration.inputs[step.id] === 'string') {
+                        // V1: flat structure (backward compatibility)
+                        inputValue = iteration.inputs[step.id];
+                    }
+                }
+                const hasInput = inputValue && inputValue.trim().length > 0;
+
+                // Check if notes exist (support both V1 and V2 structures)
+                let notesValue = '';
+                if (iteration.notes && iteration.notes[step.id]) {
+                    if (currentCycleId && typeof iteration.notes[step.id] === 'object') {
+                        // V2: cycle-keyed structure
+                        notesValue = iteration.notes[step.id][currentCycleId] || '';
+                    } else if (typeof iteration.notes[step.id] === 'string') {
+                        // V1: flat structure (backward compatibility)
+                        notesValue = iteration.notes[step.id];
+                    }
+                }
+                const hasNotes = notesValue && notesValue.trim().length > 0;
 
                 // Build tooltip content (T033: Plain text for CSS attr tooltips)
                 let tooltipContent = `${step.stepNumber}. ${step.title}`;
                 if (hasInput) {
-                    const inputPreview = iteration.inputs[step.id].substring(0, 40);
-                    tooltipContent += `\n📝 ${inputPreview}${iteration.inputs[step.id].length > 40 ? '...' : ''}`;
+                    const inputPreview = inputValue.substring(0, 40);
+                    tooltipContent += `\n📝 ${inputPreview}${inputValue.length > 40 ? '...' : ''}`;
                 }
                 if (hasNotes) {
-                    const notesPreview = iteration.notes[step.id].substring(0, 40);
-                    tooltipContent += `\n💡 ${notesPreview}${iteration.notes[step.id].length > 40 ? '...' : ''}`;
+                    const notesPreview = notesValue.substring(0, 40);
+                    tooltipContent += `\n💡 ${notesPreview}${notesValue.length > 40 ? '...' : ''}`;
                 }
 
                 return `
