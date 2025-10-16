@@ -3426,18 +3426,16 @@
                     `users/${userId}/projects/${projectId}`
                 );
 
-                if (isOnline && firebaseInitialized) {
-                    await window.firebase.remove(projectRef);
-                    console.log(`✅ Project ${projectId} deleted from Firebase`);
-                } else {
-                    // Add to offline queue
-                    queueOfflineOperation('delete', `users/${userId}/projects/${projectId}`, null);
-                    console.log(`📦 Project ${projectId} deletion queued`);
-                }
+                // CRITICAL FIX: Always attempt deletion, don't check isOnline
+                // Firebase SDK handles offline persistence automatically
+                // This prevents race conditions where isOnline status changes between calls
+                await window.firebase.remove(projectRef);
+                console.log(`✅ Project ${projectId} deleted from Firebase`);
             } catch (error) {
                 console.error(`❌ Failed to delete project ${projectId}:`, error);
-                // Add to offline queue on failure
+                // Only add to offline queue if deletion fails
                 queueOfflineOperation('delete', `users/${userId}/projects/${projectId}`, null);
+                console.log(`📦 Project ${projectId} deletion queued for retry`);
                 throw error;
             }
         }
