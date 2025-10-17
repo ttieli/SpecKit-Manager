@@ -2346,6 +2346,11 @@
             margin: 0 auto;
             overflow-y: auto; /* T011: Ensure smooth scrolling */
             will-change: transform; /* T012: GPU-accelerated scrolling for performance */
+            /* T005: Smooth transition for grid template changes */
+            transition: grid-template-columns 0.3s ease, gap 0.3s ease;
+            /* T043 [US3]: Overflow prevention for multi-column layout */
+            overflow-x: hidden;
+            box-sizing: border-box;
         }
 
         /* T058: Command category styles */
@@ -2355,6 +2360,9 @@
             border-left: 4px solid transparent; /* Color set via inline style */
             padding-left: 12px;
             transition: border-color 0.2s;
+            /* T045 [US3]: Overflow prevention */
+            box-sizing: border-box;
+            max-width: 100%;
         }
 
         .command-category-header {
@@ -2378,6 +2386,10 @@
             border-radius: 8px;
             cursor: grab;
             transition: all 0.2s;
+            /* T044 [US3]: Overflow prevention */
+            box-sizing: border-box;
+            max-width: 100%;
+            overflow: hidden;
         }
 
         .command-item:hover {
@@ -2401,6 +2413,13 @@
             font-weight: 600;
             color: #1e293b;
             margin-bottom: 6px;
+            /* T004: Text overflow handling for multi-column layout */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+            /* T006: Smooth font size transitions */
+            transition: font-size 0.3s ease, line-height 0.3s ease;
         }
 
         .command-text {
@@ -2413,6 +2432,10 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            /* T004: Ensure min-width for grid children */
+            min-width: 0;
+            /* T006: Smooth font size transitions */
+            transition: font-size 0.3s ease, line-height 0.3s ease;
         }
 
         .command-actions {
@@ -2465,6 +2488,58 @@
         .command-action-btn.delete-btn:hover {
             background: #fef2f2;
             border-color: #ef4444;
+        }
+
+        /* T007-T013: Column Selector UI Styles (Feature 007-1-20-20) */
+        .column-selector {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .column-selector label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #475569;
+        }
+
+        .column-selector input[type="range"] {
+            flex: 1;
+            max-width: 300px;
+        }
+
+        .column-selector-display {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #2563eb;
+            min-width: 2rem;
+            text-align: center;
+        }
+
+        .column-preset-btn {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .column-preset-btn:hover {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+        .column-preset-btn.active {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
         }
 
         /* T061: Toast notification styles */
@@ -3612,6 +3687,15 @@
         ];
 
         // ========================================
+        // Feature 007-1-20-20: Multi-Column Layout Constants
+        // ========================================
+
+        // T001-T003: Column count constraints for multi-column layout
+        const MIN_COLUMNS = 1;
+        const MAX_COLUMNS = 20;
+        const DEFAULT_COLUMNS = 4;
+
+        // ========================================
         // Existing Project Data & State
         // ========================================
 
@@ -3776,6 +3860,312 @@
         let expandedProjects = new Set(); // 记录展开的项目
         let selectedProjectId = null;
         let selectedIterationId = null;
+
+        // ========================================
+        // Feature 007-1-20-20: Multi-Column Layout Module Architecture
+        // Constitution Principle VI: Modularity Mandate
+        // Constitution Principle VII: Separation of Concerns
+        // ========================================
+
+        // ========== DATA ACCESS LAYER: Column Management Module ==========
+        /**
+         * Responsibilities: Read/write column preference from localStorage ONLY.
+         * Prohibited: DOM manipulation, business logic calculations.
+         * Functions: columnLoadPreference(), columnSavePreference()
+         */
+
+        /**
+         * T020 [US1]: Load column count preference from localStorage
+         * @returns {number} Column count (1-20), or default (4) if not found/invalid
+         */
+        function columnLoadPreference() {
+            try {
+                const stored = localStorage.getItem('speckit_column_count');
+
+                // Handle null/undefined (first visit)
+                if (stored === null || stored === undefined) {
+                    return DEFAULT_COLUMNS;
+                }
+
+                // Parse and validate
+                const parsed = parseInt(stored, 10);
+
+                // Handle NaN or invalid numbers
+                if (isNaN(parsed)) {
+                    console.warn('Invalid column count in localStorage, using default');
+                    return DEFAULT_COLUMNS;
+                }
+
+                // Clamp to valid range
+                if (parsed < MIN_COLUMNS || parsed > MAX_COLUMNS) {
+                    console.warn(`Column count ${parsed} out of range [${MIN_COLUMNS}, ${MAX_COLUMNS}], using default`);
+                    return DEFAULT_COLUMNS;
+                }
+
+                return parsed;
+
+            } catch (error) {
+                console.error('Error reading column preference from localStorage:', error);
+                return DEFAULT_COLUMNS;
+            }
+        }
+
+        /**
+         * T021 [US1]: Save column count preference to localStorage
+         * @param {number} columnCount - Desired column count (1-20)
+         * @returns {boolean} true if saved successfully, false otherwise
+         */
+        function columnSavePreference(columnCount) {
+            // Validate type
+            if (typeof columnCount !== 'number' || isNaN(columnCount)) {
+                console.error('Invalid column count type:', columnCount);
+                return false;
+            }
+
+            // Clamp to valid range and floor to integer
+            const clamped = Math.max(MIN_COLUMNS, Math.min(MAX_COLUMNS, Math.floor(columnCount)));
+
+            try {
+                localStorage.setItem('speckit_column_count', clamped.toString());
+                return true;
+            } catch (error) {
+                console.error('Error writing column preference to localStorage:', error);
+                return false;
+            }
+        }
+
+        // ========== BUSINESS LOGIC LAYER: Layout Calculation Module ==========
+        /**
+         * Responsibilities: Pure calculations for grid layout and font sizes.
+         * Prohibited: DOM manipulation, localStorage access.
+         * Functions: layoutCalculateGrid(), layoutCalculateFontSizes()
+         */
+
+        /**
+         * T031 [US2]: Calculate CSS Grid layout parameters based on column count
+         * T041 [US3]: Added validation logic for grid layout
+         * @param {number} columnCount - Column count (1-20)
+         * @returns {Object} Grid layout parameters
+         */
+        function layoutCalculateGrid(columnCount) {
+            // Clamp to valid range (safety check)
+            const count = Math.max(MIN_COLUMNS, Math.min(MAX_COLUMNS, columnCount));
+
+            // T041 [US3]: CSS Grid template - always use minmax(0, 1fr) to prevent overflow
+            const gridTemplateColumns = `repeat(${count}, minmax(0, 1fr))`;
+
+            // Calculate font size using segmented scaling
+            let fontSize;
+            if (count <= 4) {
+                fontSize = 16; // Constant for 1-4 columns
+            } else if (count <= 8) {
+                fontSize = Math.max(14, 20 - (count - 4) * 0.5);
+            } else if (count <= 12) {
+                fontSize = Math.max(12, 14 - (count - 8) * 0.5);
+            } else {
+                fontSize = Math.max(10, 12 - (count - 12) * 0.25);
+            }
+
+            // Calculate responsive parameters
+            const lineHeight = count <= 4 ? 1.5 : (count <= 12 ? 1.3 : 1.2);
+            const itemPadding = fontSize >= 14 ? '0.75rem' : '0.5rem';
+
+            // T041 [US3]: Validate gap value is rem-based and itemPadding never causes overflow
+            const gap = '1rem'; // Rem-based for responsive scaling
+
+            return {
+                columnCount: count,
+                gridTemplateColumns,
+                gap,
+                itemPadding,
+                fontSize,
+                lineHeight
+            };
+        }
+
+        /**
+         * T032 [US2]: Calculate detailed font size parameters for different text elements
+         * T042 [US3]: Added boundary checks for font sizes
+         * @param {number} columnCount - Column count (1-20)
+         * @returns {Object} Font size parameters
+         */
+        function layoutCalculateFontSizes(columnCount) {
+            // Clamp to valid range
+            const count = Math.max(MIN_COLUMNS, Math.min(MAX_COLUMNS, columnCount));
+
+            let labelSize, textSize, headerSize, lineHeight;
+            const minReadableSize = 10; // T042 [US3]: Minimum font size for accessibility
+
+            // Segmented scaling for different column ranges
+            if (count <= 4) {
+                // 1-4 columns: Maximum readability
+                labelSize = 16;
+                textSize = 14;
+                headerSize = 18;
+                lineHeight = 1.5;
+            } else if (count <= 8) {
+                // 5-8 columns: Gentle reduction
+                const factor = (count - 4) * 0.5;
+                labelSize = Math.max(14, 20 - factor);
+                textSize = Math.max(12, 18 - factor);
+                headerSize = Math.max(16, 22 - factor);
+                lineHeight = 1.4;
+            } else if (count <= 12) {
+                // 9-12 columns: Compact territory
+                const factor = (count - 8) * 0.5;
+                labelSize = Math.max(12, 14 - factor);
+                textSize = Math.max(11, 12 - factor);
+                headerSize = Math.max(14, 16 - factor);
+                lineHeight = 1.3;
+            } else {
+                // 13-20 columns: Dense for power users
+                const factor = (count - 12) * 0.25;
+                labelSize = Math.max(10, 12 - factor);
+                textSize = Math.max(10, 11 - factor);
+                headerSize = Math.max(12, 14 - factor);
+                lineHeight = 1.2;
+            }
+
+            // T042 [US3]: Verify all font sizes >= minReadableSize and lineHeight >= 1.2
+            labelSize = Math.max(minReadableSize, Math.floor(labelSize));
+            textSize = Math.max(minReadableSize, Math.floor(textSize));
+            headerSize = Math.max(minReadableSize, Math.floor(headerSize));
+            lineHeight = Math.max(1.2, lineHeight);
+
+            return {
+                columnCount: count,
+                commandLabelSize: labelSize,
+                commandTextSize: textSize,
+                categoryHeaderSize: headerSize,
+                lineHeight,
+                minReadableSize
+            };
+        }
+
+        // ========== PRESENTATION LAYER: Command Grid Rendering Module ==========
+        /**
+         * Responsibilities: Update DOM with calculated layout.
+         * Prohibited: Direct localStorage access (use column* functions), business logic calculations.
+         * Functions: renderCommandGrid(), renderColumnSelector(), handleColumnCountChange(), handleColumnCountSet()
+         */
+
+        /**
+         * T023 [US1]: Render column count selector UI control
+         * @returns {void}
+         */
+        function renderColumnSelector() {
+            const container = document.getElementById('command-controls');
+            if (!container) return;
+
+            // DATA ACCESS LAYER: Get current preference
+            const currentCount = columnLoadPreference();
+
+            const selectorHTML = `
+                <div class="column-selector">
+                    <label for="column-count-input">列数 (Columns):</label>
+                    <input type="range"
+                           id="column-count-input"
+                           min="${MIN_COLUMNS}"
+                           max="${MAX_COLUMNS}"
+                           value="${currentCount}"
+                           oninput="handleColumnCountChange(this.value)">
+                    <span id="column-count-display" class="column-selector-display">${currentCount}</span>
+                    <button class="column-preset-btn ${currentCount === 1 ? 'active' : ''}"
+                            onclick="handleColumnCountSet(1)">1</button>
+                    <button class="column-preset-btn ${currentCount === 4 ? 'active' : ''}"
+                            onclick="handleColumnCountSet(4)">4</button>
+                    <button class="column-preset-btn ${currentCount === 8 ? 'active' : ''}"
+                            onclick="handleColumnCountSet(8)">8</button>
+                    <button class="column-preset-btn ${currentCount === 12 ? 'active' : ''}"
+                            onclick="handleColumnCountSet(12)">12</button>
+                    <button class="column-preset-btn ${currentCount === 20 ? 'active' : ''}"
+                            onclick="handleColumnCountSet(20)">20</button>
+                </div>
+            `;
+
+            // Insert before command list
+            const existingSelector = container.querySelector('.column-selector');
+            if (existingSelector) {
+                existingSelector.outerHTML = selectorHTML;
+            } else {
+                container.insertAdjacentHTML('afterbegin', selectorHTML);
+            }
+        }
+
+        /**
+         * T024 [US1]: Handle slider input change (live preview, no save)
+         * @param {string} value - Slider value (1-20)
+         */
+        function handleColumnCountChange(value) {
+            const count = parseInt(value, 10);
+
+            // Update display
+            const display = document.getElementById('column-count-display');
+            if (display) {
+                display.textContent = count;
+            }
+
+            // Update active button
+            document.querySelectorAll('.column-preset-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Live preview without saving
+            const layout = layoutCalculateGrid(count);
+            const fonts = layoutCalculateFontSizes(count);
+
+            const commandList = document.getElementById('command-list');
+            if (commandList) {
+                commandList.style.gridTemplateColumns = layout.gridTemplateColumns;
+                commandList.style.gap = layout.gap;
+
+                // Apply font sizes to all elements
+                const labels = commandList.querySelectorAll('.command-label');
+                labels.forEach(label => {
+                    label.style.fontSize = fonts.commandLabelSize + 'px';
+                });
+
+                const texts = commandList.querySelectorAll('.command-text');
+                texts.forEach(text => {
+                    text.style.fontSize = fonts.commandTextSize + 'px';
+                    text.style.lineHeight = fonts.lineHeight;
+                });
+
+                const headers = commandList.querySelectorAll('.command-category-header');
+                headers.forEach(header => {
+                    header.style.fontSize = fonts.categoryHeaderSize + 'px';
+                });
+            }
+        }
+
+        /**
+         * T025 [US1]: Handle preset button click or slider release (save)
+         * @param {number} count - Column count to set (1-20)
+         */
+        function handleColumnCountSet(count) {
+            // DATA ACCESS LAYER: Save preference
+            const saved = columnSavePreference(count);
+            if (!saved) {
+                console.warn('Failed to save column preference');
+            }
+
+            // Update slider and display
+            const slider = document.getElementById('column-count-input');
+            const display = document.getElementById('column-count-display');
+            if (slider) slider.value = count;
+            if (display) display.textContent = count;
+
+            // Update active button
+            document.querySelectorAll('.column-preset-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (parseInt(btn.textContent, 10) === count) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // PRESENTATION LAYER: Re-render with new layout
+            renderCommandLibrary();
+        }
 
         // ============ Toast 通知系统 ============
         function showToast(message, type = 'success') {
@@ -4535,6 +4925,7 @@
 
         /**
          * T054: Render Command Library grouped by category
+         * T026-T029 [US1]: Modified for multi-column layout support
          * 渲染按分类分组的命令库
          * @param {Array} commandsToRender - Optional filtered command array (defaults to global commands)
          */
@@ -4542,7 +4933,24 @@
             const container = document.getElementById('command-list');
             if (!container) return;
 
-            // Group commands by category
+            // T027 [US1]: DATA ACCESS LAYER - Load column preference
+            const columnCount = columnLoadPreference();
+
+            // T028 [US1]: BUSINESS LOGIC LAYER - Calculate layout parameters
+            const layout = layoutCalculateGrid(columnCount);
+            const fonts = layoutCalculateFontSizes(columnCount);
+
+            // T028 [US1]: Apply CSS Grid layout to container
+            container.style.display = 'grid';
+            container.style.gridTemplateColumns = layout.gridTemplateColumns;
+            container.style.gap = layout.gap;
+            container.style.width = '100%';
+
+            // T037-T038 [US2] [P]: CSS custom properties for responsive scaling
+            container.style.setProperty('--column-count', columnCount);
+            container.style.setProperty('--base-font-size', fonts.commandLabelSize + 'px');
+
+            // T029: Preserve existing command rendering logic - Group commands by category
             const grouped = {};
             commandsToRender.forEach(cmd => {
                 const category = cmd.category || 'Uncategorized';
@@ -4552,10 +4960,10 @@
                 grouped[category].push(cmd);
             });
 
-            // Empty state
+            // Empty state (spans full grid width)
             if (commandsToRender.length === 0) {
                 container.innerHTML = `
-                    <div style="text-align: center; padding: 60px 20px; color: #94a3b8;">
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #94a3b8;">
                         <div style="font-size: 4rem; margin-bottom: 16px; opacity: 0.6;">📋</div>
                         <div style="font-size: 1.1rem; margin-bottom: 8px;">暂无命令</div>
                         <div style="font-size: 0.9rem;">点击"添加命令"开始创建您的命令库</div>
@@ -4564,15 +4972,19 @@
                 return;
             }
 
-            // Render grouped commands
+            // Render grouped commands with calculated font sizes
             let html = '';
             Object.keys(grouped).sort().forEach(category => {
                 // T021-T023: Apply color-coding to categories
                 const { color } = colorAssignCategory(category);
                 const bgColor = color + '22'; // Add transparency for background
 
-                html += `<div class="command-category" style="border-left-color: ${color};">
-                    <div class="command-category-header" style="background: ${bgColor}; color: ${color};">${category}</div>
+                html += `<div class="command-category" style="grid-column: span 1; border-left-color: ${color};">
+                    <div class="command-category-header" style="
+                        font-size: ${fonts.categoryHeaderSize}px;
+                        background: ${bgColor};
+                        color: ${color};
+                    ">${category}</div>
                 `;
 
                 grouped[category].forEach(cmd => {
@@ -4583,13 +4995,20 @@
 
                     html += `
                         <div class="command-item command-item-dense"
+                             style="padding: ${layout.itemPadding};"
                              draggable="true"
                              ondragstart="handleDragStart(event, '${cmd.id}')"
                              ondragover="handleDragOver(event)"
                              ondrop="handleDrop(event, '${cmd.id}')">
                             <div class="command-info">
-                                <div class="command-label command-label-dense">${cmd.label}</div>
-                                <div class="command-text command-text-dense" title="${cmd.text}">${truncatedText}</div>
+                                <div class="command-label command-label-dense" style="
+                                    font-size: ${fonts.commandLabelSize}px;
+                                    line-height: ${fonts.lineHeight};
+                                ">${cmd.label}</div>
+                                <div class="command-text command-text-dense" style="
+                                    font-size: ${fonts.commandTextSize}px;
+                                    line-height: ${fonts.lineHeight};
+                                " title="${cmd.text}">${truncatedText}</div>
                             </div>
                             <div class="command-actions">
                                 <button class="command-action-btn copy-btn"
@@ -7029,6 +7448,8 @@
             } else if (tabName === 'commands') {
                 projectsTab.style.display = 'none';
                 commandsTab.style.display = 'block';
+                // T030 [US1]: Render column selector before command library
+                renderColumnSelector();
                 // Render command library when switching to commands tab
                 renderCommandLibrary();
             }
@@ -7475,6 +7896,17 @@
             window.isOnline = false; // Sync to window for testing
             console.log('🔴 Gone offline');
             updateConnectionStatus();
+        });
+
+        // T055 [US3]: Window resize handler for layout stability
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                if (currentTab === 'commands') {
+                    renderCommandLibrary();
+                }
+            }, 300); // Debounce 300ms
         });
     </script>
 </body>
