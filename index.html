@@ -1345,19 +1345,19 @@
         /* Toast 通知 */
         .toast {
             position: fixed;
-            top: 100px;
-            right: 30px;
+            top: 80px;
+            right: 24px;
             background: white;
-            padding: 16px 24px;
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            padding: 10px 16px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
             z-index: 2000;
             display: none;
             align-items: center;
-            gap: 12px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            border-left: 4px solid #10b981;
+            gap: 8px;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            border-left: 3px solid #10b981;
             animation: toastSlideIn 0.3s ease-out;
         }
 
@@ -1378,17 +1378,17 @@
 
         .toast.success {
             border-left-color: #10b981;
-            color: #047857;
+            color: #059669;
         }
 
         .toast.error {
-            border-left-color: #dc2626;
-            color: #991b1b;
+            border-left-color: #ef4444;
+            color: #dc2626;
         }
 
         .toast.warning {
             border-left-color: #f59e0b;
-            color: #92400e;
+            color: #d97706;
         }
 
         /* T045: Loading Spinner & Overlay */
@@ -2557,17 +2557,17 @@
             position: fixed;
             bottom: 24px;
             right: 24px;
-            padding: 16px 24px;
+            padding: 10px 16px;
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            font-size: 0.95rem;
-            font-weight: 600;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            font-size: 0.8125rem;
+            font-weight: 500;
             opacity: 0;
             transform: translateY(20px);
             transition: all 0.3s;
             z-index: 10000;
-            max-width: 400px;
+            max-width: 320px;
         }
 
         .toast.show {
@@ -2576,17 +2576,17 @@
         }
 
         .toast-success {
-            border-left: 4px solid #10b981;
+            border-left: 3px solid #10b981;
             color: #059669;
         }
 
         .toast-error {
-            border-left: 4px solid #ef4444;
+            border-left: 3px solid #ef4444;
             color: #dc2626;
         }
 
         .toast-info {
-            border-left: 4px solid #2563eb;
+            border-left: 3px solid #2563eb;
             color: #1d4ed8;
         }
     </style>
