@@ -4558,7 +4558,7 @@
         }
 
         // 导入确认 (T007, T008)
-        function confirmImport() {
+        async function confirmImport() {
             if (!pendingImportData) {
                 showToast('没有待导入的数据', 'error');
                 return;
@@ -7503,7 +7503,7 @@
          * 处理删除命令，带确认对话框
          * @param {string} commandId - Command ID to delete
          */
-        function handleDeleteCommand(commandId) {
+        async function handleDeleteCommand(commandId) {
             // Find the command for confirmation message
             const command = commands.find(c => c.id === commandId);
             if (!command) {
