@@ -1348,17 +1348,21 @@
             top: 80px;
             right: 24px;
             background: white;
-            padding: 10px 16px;
+            padding: 8px 14px;
             border-radius: 6px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            z-index: 2000;
+            z-index: 10000;
             display: none;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             font-size: 0.8125rem;
             font-weight: 500;
             border-left: 3px solid #10b981;
             animation: toastSlideIn 0.3s ease-out;
+            max-width: 280px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         @keyframes toastSlideIn {
@@ -2552,41 +2556,19 @@
             border-color: #2563eb;
         }
 
-        /* T061: Toast notification styles */
-        .toast {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            padding: 10px 16px;
-            background: white;
-            border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            font-size: 0.8125rem;
-            font-weight: 500;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.3s;
-            z-index: 10000;
-            max-width: 320px;
-        }
-
-        .toast.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
+        /* T061: Toast notification type styles */
         .toast-success {
-            border-left: 3px solid #10b981;
+            border-left-color: #10b981;
             color: #059669;
         }
 
         .toast-error {
-            border-left: 3px solid #ef4444;
+            border-left-color: #ef4444;
             color: #dc2626;
         }
 
         .toast-info {
-            border-left: 3px solid #2563eb;
+            border-left-color: #2563eb;
             color: #1d4ed8;
         }
 
@@ -4299,7 +4281,7 @@
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
             toast.textContent = message;
-            toast.className = `toast ${type} show`;
+            toast.className = `toast toast-${type} show`;
 
             setTimeout(() => {
                 toast.classList.remove('show');
@@ -5229,37 +5211,8 @@
         }
 
         /**
-         * T056: Show toast notification
-         * 显示提示通知
-         * @param {string} message - Message to display
-         * @param {string} type - Toast type: 'success' | 'error' | 'info'
+         * T056: Show toast notification (duplicate removed - using unified version)
          */
-        function showToast(message, type = 'info') {
-            // Remove existing toast if any
-            const existingToast = document.querySelector('.toast');
-            if (existingToast) {
-                existingToast.remove();
-            }
-
-            // Create toast
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-
-            // Show with animation
-            setTimeout(() => {
-                toast.classList.add('show');
-            }, 10);
-
-            // Auto-hide after 3 seconds
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => {
-                    toast.remove();
-                }, 300);
-            }, 3000);
-        }
 
         function renderIterationCard(project, iteration) {
             // Defensive check
