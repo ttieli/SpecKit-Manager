@@ -2726,7 +2726,7 @@
             serverTimestamp
         };
 
-        console.log('✅ Firebase SDK v12.4.0 loaded successfully');
+        // Firebase SDK v12.4.0 loaded
     </script>
 </head>
 <body>
@@ -3070,7 +3070,7 @@
          */
         async function handleAuthStateChange(user) {
             if (user) {
-                console.log('✅ User logged in:', user.email);
+                // User logged in
                 // Hide login UI, show main app
                 hideAuthUI();
 
@@ -3108,7 +3108,7 @@
                 const saved = localStorage.getItem('firebase_offline_queue');
                 if (saved) {
                     offlineQueue = JSON.parse(saved);
-                    console.log(`📦 Loaded ${offlineQueue.length} operations from offline queue`);
+                    // Loaded offline queue
                 }
             } catch (error) {
                 console.error('Failed to load offline queue:', error);
@@ -3426,51 +3426,38 @@
         }
 
         /**
-         * Update connection status indicator
-         * 更新连接状态指示器
+         * Update connection status indicator (with debounce)
+         * 更新连接状态指示器（带防抖）
          */
+        let connectionStatusTimeout = null;
         function updateConnectionStatus() {
-            const statusEl = document.getElementById('connectionStatus');
-            const dotEl = statusEl?.querySelector('.status-dot');
-            const textEl = statusEl?.querySelector('.status-text');
-
-            console.log('🔍 updateConnectionStatus called:', {
-                isOnline,
-                hasStatusEl: !!statusEl,
-                hasDotEl: !!dotEl,
-                hasTextEl: !!textEl
-            });
-
-            if (!statusEl) {
-                console.warn('⚠️ connectionStatus element not found');
-                return;
-            }
-            if (!dotEl) {
-                console.warn('⚠️ status-dot element not found');
-                return;
-            }
-            if (!textEl) {
-                console.warn('⚠️ status-text element not found');
-                return;
+            // Debounce rapid status changes (500ms)
+            if (connectionStatusTimeout) {
+                clearTimeout(connectionStatusTimeout);
             }
 
-            statusEl.style.display = 'flex';
+            connectionStatusTimeout = setTimeout(() => {
+                const statusEl = document.getElementById('connectionStatus');
+                const dotEl = statusEl?.querySelector('.status-dot');
+                const textEl = statusEl?.querySelector('.status-text');
 
-            // Handle three states: online (true), offline (false), unknown (undefined)
-            if (isOnline === true) {
-                dotEl.classList.remove('offline');
-                textEl.textContent = '在线';
-                console.log('✅ Connection status: 🟢 在线');
-            } else if (isOnline === false) {
-                dotEl.classList.add('offline');
-                textEl.textContent = '离线';
-                console.log('⚠️ Connection status: 🔴 离线');
-            } else {
-                // isOnline is undefined/null - still connecting
-                dotEl.classList.remove('offline');
-                textEl.textContent = '连接中...';
-                console.log('⏳ Connection status: 🔄 连接中...');
-            }
+                if (!statusEl || !dotEl || !textEl) return;
+
+                statusEl.style.display = 'flex';
+
+                // Handle three states: online (true), offline (false), unknown (undefined)
+                if (isOnline === true) {
+                    dotEl.classList.remove('offline');
+                    textEl.textContent = '在线';
+                } else if (isOnline === false) {
+                    dotEl.classList.add('offline');
+                    textEl.textContent = '离线';
+                } else {
+                    // isOnline is undefined/null - still connecting
+                    dotEl.classList.remove('offline');
+                    textEl.textContent = '连接中...';
+                }
+            }, 500);
         }
 
         // ========================================
@@ -3533,7 +3520,7 @@
          */
         async function loadProjectsFromFirebase(userId) {
             try {
-                console.log(`📥 Loading projects for user: ${userId}`);
+                // Loading projects for user
 
                 // T027: Load from both Firebase and localStorage for conflict resolution
                 const projectsRef = window.firebase.ref(
@@ -3546,7 +3533,7 @@
                 if (snapshot.exists()) {
                     const projectsObj = snapshot.val();
                     let cloudProjects = Object.values(projectsObj);
-                    console.log(`✅ Loaded ${cloudProjects.length} projects from Firebase`);
+                    // Loaded projects from Firebase
 
                     // Migrate cloud projects
                     cloudProjects = cloudProjects.map(migrateProjectSchema);
@@ -3556,7 +3543,7 @@
                     let localProjects = [];
                     if (saved) {
                         localProjects = JSON.parse(saved).map(migrateProjectSchema);
-                        console.log(`💾 Loaded ${localProjects.length} projects from localStorage`);
+                        // Loaded projects from localStorage
                     }
 
                     // T027: Use cloud-first conflict resolution
@@ -3564,7 +3551,7 @@
 
                     // T028: Save merged result back to localStorage (cloud authority)
                     localStorage.setItem('speckit_projects', JSON.stringify(projects));
-                    console.log(`🔄 Merged and saved ${projects.length} projects to localStorage`);
+                    // Merged and saved projects
 
                     renderAllViews();
 
@@ -5445,7 +5432,7 @@
             }
 
             // T031: Log conflict resolution stats
-            console.log(`🔄 Conflict resolution: ${cloudWins} cloud wins, ${localWins} local wins`);
+            // Conflict resolution complete
             return merged;
         }
 
@@ -5501,7 +5488,7 @@
 
             // Always save to localStorage first (offline backup)
             localStorage.setItem('speckit_projects', JSON.stringify(projects));
-            console.log('💾 Saved to localStorage');
+            // Saved to localStorage
 
             // If user is authenticated, also save to Firebase
             if (currentUser && firebaseInitialized) {
@@ -5598,7 +5585,7 @@
                 const saved = localStorage.getItem('speckit_commands');
                 if (saved) {
                     commands = JSON.parse(saved);
-                    console.log(`📦 Loaded ${commands.length} commands from localStorage`);
+                    // Loaded commands from localStorage
                 } else {
                     // T050: Seed defaults on first use
                     commands = commandLibrarySeedDefaults();
@@ -8035,7 +8022,7 @@
         // Initialize Firebase on page load
         // ========================================
         window.addEventListener('load', async () => {
-            console.log('🚀 Initializing Firebase...');
+            // Initializing Firebase
 
             // Initial connection status display
             updateConnectionStatus();
