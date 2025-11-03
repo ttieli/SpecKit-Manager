@@ -4938,9 +4938,26 @@
             renderProjectTree();
         }
 
+        // 更新浏览器标签页标题
+        function updatePageTitle() {
+            const defaultTitle = 'Spec Kit 项目管理面板';
+
+            if (selectedProjectId) {
+                const project = projects.find(p => p.id === selectedProjectId);
+                if (project && project.name) {
+                    document.title = `${project.name} - ${defaultTitle}`;
+                    return;
+                }
+            }
+
+            // 如果没有选中项目或找不到项目，使用默认标题
+            document.title = defaultTitle;
+        }
+
         function selectProject(projectId) {
             selectedProjectId = projectId;
             selectedIterationId = null;
+            updatePageTitle();
             renderProjectTree();
             renderMainContent();
         }
@@ -4950,6 +4967,7 @@
             selectedIterationId = iterationId;
             // 确保项目展开
             expandedProjects.add(projectId);
+            updatePageTitle();
             renderProjectTree();
             renderMainContent();
         }
@@ -5250,6 +5268,9 @@
                     selectedIterationId = projects[0].iterations[0].id;
                 }
             }
+
+            // Update page title based on selected project
+            updatePageTitle();
 
             // Render UI components
             renderProjectTree();      // Render project sidebar
@@ -7212,6 +7233,7 @@
                     selectedProjectId = null;
                     selectedIterationId = null;
                 }
+                updatePageTitle();
             }
 
             expandedProjects.delete(projectId);
@@ -7255,6 +7277,7 @@
             // Update UI
             renderProjectTree();
             if (selectedProjectId === projectId) {
+                updatePageTitle();
                 renderMainContent();
             }
             showToast(`✅ Project "${project.name}" updated`, 'success');
