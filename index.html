@@ -1916,6 +1916,27 @@
             min-height: calc(100vh - 200px);
         }
 
+        .project-breadcrumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .project-breadcrumb strong {
+            font-weight: 600;
+        }
+
+        .project-breadcrumb .separator {
+            opacity: 0.7;
+        }
+
         @media (max-width: 1024px) {
             .main-layout {
                 grid-template-columns: 1fr;
@@ -2814,7 +2835,8 @@
 
         <!-- T051: Tab Navigation -->
         <div class="view-tabs">
-            <button class="view-tab-btn active" onclick="switchTab('projects')">📁 项目管理</button>
+            <button class="view-tab-btn" onclick="switchTab('project-list')">📁 项目列表</button>
+            <button class="view-tab-btn active" onclick="switchTab('project-content')">📄 项目内容</button>
             <button class="view-tab-btn" onclick="switchTab('commands')">📋 命令库</button>
         </div>
 
@@ -2840,17 +2862,15 @@
             <div id="command-list" class="command-list"></div>
         </div>
 
-        <!-- Projects Tab (main layout) -->
-        <div id="projects-tab" class="tab-content" style="display: block;">
-            <!-- 主布局：左侧项目树 + 右侧内容区 -->
-            <div class="main-layout" id="mainLayout">
-            <!-- 左侧项目树 -->
-            <div class="project-tree-sidebar" id="projectTree"></div>
+        <!-- Project List Tab -->
+        <div id="project-list-tab" class="tab-content" style="display: none;">
+            <div class="project-tree-sidebar" id="projectTree" style="width: 100%; max-width: 100%;"></div>
+        </div>
 
-            <!-- 右侧主内容区 -->
+        <!-- Project Content Tab -->
+        <div id="project-content-tab" class="tab-content" style="display: block;">
             <div class="main-content-area" id="mainContent"></div>
-            </div> <!-- end main-layout -->
-        </div> <!-- end projects-tab -->
+        </div>
 
         <!-- 新建项目模态框 -->
         <div class="modal" id="addProjectModal">
@@ -4960,6 +4980,8 @@
             updatePageTitle();
             renderProjectTree();
             renderMainContent();
+            // Auto-switch to project content tab
+            switchTab('project-content');
         }
 
         function selectIteration(projectId, iterationId) {
@@ -4970,6 +4992,8 @@
             updatePageTitle();
             renderProjectTree();
             renderMainContent();
+            // Auto-switch to project content tab
+            switchTab('project-content');
         }
 
         // ============ 主内容区渲染 (T012) ============
@@ -4988,14 +5012,27 @@
                 return;
             }
 
+            // Generate breadcrumb
+            let breadcrumb = `<div class="project-breadcrumb">
+                📁 当前项目: <strong>${project.name}</strong>`;
+
+            if (selectedIterationId) {
+                const iteration = project.iterations.find(i => i.id === selectedIterationId);
+                if (iteration) {
+                    breadcrumb += ` <span class="separator">›</span> 迭代: <strong>${iteration.name}</strong>`;
+                }
+            }
+
+            breadcrumb += `</div>`;
+
             if (!selectedIterationId) {
                 // 显示项目概览
-                mainContent.innerHTML = renderProjectOverview(project);
+                mainContent.innerHTML = breadcrumb + renderProjectOverview(project);
             } else {
                 // 显示迭代工作流
                 const iteration = project.iterations.find(i => i.id === selectedIterationId);
                 if (iteration) {
-                    mainContent.innerHTML = renderIterationWorkflow(project, iteration);
+                    mainContent.innerHTML = breadcrumb + renderIterationWorkflow(project, iteration);
                     // T039: Initialize auto-resize for input fields after rendering
                     setTimeout(() => initAutoResizeInputs(), 50);
                 } else {
@@ -7600,22 +7637,34 @@
             });
 
             // Find and activate the clicked tab button
+            const tabNameMap = {
+                'project-list': '项目列表',
+                'project-content': '项目内容',
+                'commands': '命令库'
+            };
             const activeButton = Array.from(tabButtons).find(btn =>
-                btn.textContent.includes(tabName === 'projects' ? '项目管理' : '命令库')
+                btn.textContent.includes(tabNameMap[tabName])
             );
             if (activeButton) {
                 activeButton.classList.add('active');
             }
 
             // Show/hide tab content
-            const projectsTab = document.getElementById('projects-tab');
+            const projectListTab = document.getElementById('project-list-tab');
+            const projectContentTab = document.getElementById('project-content-tab');
             const commandsTab = document.getElementById('commands-tab');
 
-            if (tabName === 'projects') {
-                projectsTab.style.display = 'block';
-                commandsTab.style.display = 'none';
+            // Hide all tabs first
+            projectListTab.style.display = 'none';
+            projectContentTab.style.display = 'none';
+            commandsTab.style.display = 'none';
+
+            // Show the selected tab
+            if (tabName === 'project-list') {
+                projectListTab.style.display = 'block';
+            } else if (tabName === 'project-content') {
+                projectContentTab.style.display = 'block';
             } else if (tabName === 'commands') {
-                projectsTab.style.display = 'none';
                 commandsTab.style.display = 'block';
                 // T030 [US1]: Render column selector before command library
                 renderColumnSelector();
