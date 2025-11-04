@@ -2857,7 +2857,10 @@
                            placeholder="🔍 搜索命令（标签、文本或分类）..."
                            oninput="handleSearchCommands(this.value)">
                 </div>
-                <button class="add-command-btn" onclick="handleAddCommand()">➕ 添加命令</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="add-command-btn" onclick="handleClearAllCopied()" style="background: #64748b;">🔄 清除已复制</button>
+                    <button class="add-command-btn" onclick="handleAddCommand()">➕ 添加命令</button>
+                </div>
             </div>
             <div id="command-list" class="command-list"></div>
         </div>
@@ -5226,7 +5229,7 @@
                                 " title="${cmd.text}">${truncatedText}</div>
                             </div>
                             <div class="command-actions">
-                                <button class="command-action-btn copy-btn"
+                                <button class="command-action-btn copy-btn${cmd.copied ? ' copied' : ''}"
                                         onclick="handleCopyCommand('${cmd.id}')"
                                         title="复制">
                                     📋
@@ -7547,14 +7550,55 @@
                 return;
             }
 
+            // If already copied, just toggle the state without copying again
+            if (command.copied) {
+                command.copied = false;
+                delete command.copiedAt;
+                saveCommands(); // This will sync to both localStorage and Firebase
+                renderCommandLibrary();
+                showToast('✅ 已取消已复制标记', 'success');
+                return;
+            }
+
             // Call business logic (async)
             const result = await commandLibraryCopy(command.text);
 
             if (result.success) {
+                // Mark command as copied and persist state
+                command.copied = true;
+                command.copiedAt = new Date().toISOString();
+                saveCommands(); // This will sync to both localStorage and Firebase
+
+                // Update UI to show green state
+                renderCommandLibrary();
+
                 showToast('✅ 已复制到剪贴板', 'success');
             } else {
                 showToast(`❌ 复制失败: ${result.error}`, 'error');
             }
+        }
+
+        /**
+         * Clear all copied states from commands
+         * 清除所有命令的已复制状态
+         */
+        function handleClearAllCopied() {
+            const copiedCount = commands.filter(c => c.copied).length;
+
+            if (copiedCount === 0) {
+                showToast('ℹ️ 没有已复制的命令', 'info');
+                return;
+            }
+
+            // Clear all copied states
+            commands.forEach(cmd => {
+                cmd.copied = false;
+                delete cmd.copiedAt;
+            });
+
+            saveCommands(); // This will sync to both localStorage and Firebase
+            renderCommandLibrary();
+            showToast(`✅ 已清除 ${copiedCount} 个命令的已复制标记`, 'success');
         }
 
         /**
