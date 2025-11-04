@@ -5672,18 +5672,33 @@
          * @returns {Object} Migrated iteration object
          */
         function migrateIterationToCycles(iteration) {
-            // Skip if already migrated
+            // Migrate existing cycles to include lifecycle metadata
             if (iteration.cycles && iteration.cycles.length > 0) {
+                iteration.cycles.forEach(cycle => {
+                    // Add lifecycle metadata if missing
+                    if (!cycle.status) {
+                        cycle.status = 'active';  // Default to active
+                    }
+                    if (!cycle.startedAt) {
+                        cycle.startedAt = cycle.createdAt || null;  // Use createdAt as fallback
+                    }
+                    if (!cycle.completedAt) {
+                        cycle.completedAt = null;
+                    }
+                });
                 return iteration;
             }
 
-            // Create timestamped first cycle
+            // Create timestamped first cycle with lifecycle metadata
             const migrationDate = new Date().toISOString().split('T')[0];
             const firstCycle = {
                 id: `cycle_${Date.now()}`,
                 name: `Initial Cycle - Migrated ${migrationDate}`,
                 createdAt: iteration.createdAt || new Date().toISOString(),
-                order: 1
+                order: 1,
+                status: 'active',           // New: lifecycle status
+                startedAt: iteration.createdAt || new Date().toISOString(),  // New: start timestamp
+                completedAt: null           // New: completion timestamp
             };
 
             // Initialize cycles array
@@ -6555,9 +6570,10 @@
          * @param {string} projectId - Project ID
          * @param {string} iterationId - Iteration ID
          * @param {string} cycleName - Optional custom cycle name
+         * @param {boolean} autoCreated - Whether cycle was auto-created by specify command
          * @returns {Object|null} New cycle object or null if failed
          */
-        function cycleManagementAdd(projectId, iterationId, cycleName) {
+        function cycleManagementAdd(projectId, iterationId, cycleName, autoCreated = false) {
             // Find project and iteration
             const project = projects.find(p => p.id === projectId);
             if (!project) {
@@ -6576,26 +6592,34 @@
             const defaultName = `Cycle ${iteration.cycles.length + 1}`;
             const finalName = trimmedName || defaultName;
 
-            // Validate name
-            const validation = validateCycleName(finalName);
-            if (!validation.valid) {
-                alert(validation.errors[0]);
-                return null;
+            // Validate name (skip for auto-created cycles)
+            if (!autoCreated) {
+                const validation = validateCycleName(finalName);
+                if (!validation.valid) {
+                    alert(validation.errors[0]);
+                    return null;
+                }
             }
 
-            // Create new cycle
+            // Get previous cycle for state inheritance
+            const previousCycleId = iteration.currentCycle;
+
+            // Create new cycle with lifecycle metadata
             const newCycle = {
                 id: `cycle_${Date.now()}`,
                 name: finalName,
                 createdAt: new Date().toISOString(),
-                order: Math.max(...iteration.cycles.map(c => c.order), 0) + 1
+                order: Math.max(...iteration.cycles.map(c => c.order), 0) + 1,
+                status: 'active',           // Lifecycle status: 'active' | 'completed'
+                startedAt: autoCreated ? new Date().toISOString() : null,  // Set on /speckit.specify
+                completedAt: null           // Set on git merge
             };
 
             // Add to cycles array
             iteration.cycles.push(newCycle);
             iteration.currentCycle = newCycle.id;
 
-            // Initialize empty data for all workflow steps
+            // Initialize data for all workflow steps with phase-aware state inheritance
             commandSteps.forEach(step => {
                 const stepId = step.id;
 
@@ -6604,10 +6628,27 @@
                 if (!iteration.notes[stepId]) iteration.notes[stepId] = {};
                 if (!iteration.completedSteps[stepId]) iteration.completedSteps[stepId] = {};
 
-                // Initialize empty data for this cycle
-                iteration.inputs[stepId][newCycle.id] = '';
-                iteration.notes[stepId][newCycle.id] = '';
-                iteration.completedSteps[stepId][newCycle.id] = false;
+                // Phase-aware state inheritance:
+                // - init & architecture phases: preserve completion state from previous cycle
+                // - development & iteration phases: reset to incomplete
+                const shouldPreserveState = (step.phase === 'init' || step.phase === 'architecture');
+
+                if (shouldPreserveState && previousCycleId && previousCycleId !== 'init') {
+                    // Copy state from previous cycle
+                    iteration.inputs[stepId][newCycle.id] = iteration.inputs[stepId][previousCycleId] || '';
+                    iteration.notes[stepId][newCycle.id] = iteration.notes[stepId][previousCycleId] || '';
+                    iteration.completedSteps[stepId][newCycle.id] = iteration.completedSteps[stepId][previousCycleId] || false;
+                } else if (shouldPreserveState && previousCycleId === 'init') {
+                    // Copy from init cycle
+                    iteration.inputs[stepId][newCycle.id] = iteration.inputs[stepId]['init'] || '';
+                    iteration.notes[stepId][newCycle.id] = iteration.notes[stepId]['init'] || '';
+                    iteration.completedSteps[stepId][newCycle.id] = iteration.completedSteps[stepId]['init'] || false;
+                } else {
+                    // Reset for development/iteration phases
+                    iteration.inputs[stepId][newCycle.id] = '';
+                    iteration.notes[stepId][newCycle.id] = '';
+                    iteration.completedSteps[stepId][newCycle.id] = false;
+                }
             });
 
             // Save changes
@@ -6885,32 +6926,95 @@
                 const isSelected = cycle.id === iteration.currentCycle;
                 const displayName = escapeHtml(truncateCycleName(cycle.name, 50));
                 const fullName = escapeHtml(cycle.name);
-                return `<option value="${cycle.id}" ${isSelected ? 'selected' : ''} title="${fullName}">${displayName}</option>`;
+
+                // Add status indicator
+                const status = cycle.status || 'active';  // Default to active for backward compatibility
+                const statusEmoji = status === 'completed' ? '✅' : '🔄';
+                const statusText = status === 'completed' ? ' (已完成)' : ' (进行中)';
+
+                return `<option value="${cycle.id}" ${isSelected ? 'selected' : ''} title="${fullName}${statusText}">${statusEmoji} ${displayName}</option>`;
             }).join('');
 
+            // Get current cycle details for status display
+            const currentCycle = cycles.find(c => c.id === iteration.currentCycle);
+            const currentStatus = currentCycle ? (currentCycle.status || 'active') : 'active';
+            const statusBadgeColor = currentStatus === 'completed' ? '#10b981' : '#3b82f6';
+            const statusBadgeText = currentStatus === 'completed' ? '✅ 已完成' : '🔄 进行中';
+
+            // Format dates
+            const formatDate = (isoString) => {
+                if (!isoString) return '-';
+                const date = new Date(isoString);
+                return date.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            };
+
+            const startedAt = currentCycle?.startedAt ? formatDate(currentCycle.startedAt) : '-';
+            const completedAt = currentCycle?.completedAt ? formatDate(currentCycle.completedAt) : '-';
+
+            // Calculate duration if completed
+            let durationText = '';
+            if (currentCycle?.startedAt && currentCycle?.completedAt) {
+                const start = new Date(currentCycle.startedAt);
+                const end = new Date(currentCycle.completedAt);
+                const durationMs = end - start;
+                const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
+                const durationMinutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+                durationText = `<div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">
+                    ⏱️ 用时: ${durationHours}小时 ${durationMinutes}分钟
+                </div>`;
+            }
+
             return `
-                <div class="cycle-selector" style="background: white; border-radius: 8px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 10px;">
-                    <label style="font-weight: 600; color: #1e293b; font-size: 0.9rem;">Cycle:</label>
-                    <select id="cycleSelect"
-                            onchange="handleCycleSwitch('${projectId}', '${iterationId}', this.value)"
-                            style="flex: 1; padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.9rem; background: white; cursor: pointer;">
-                        ${cycleOptions}
-                    </select>
-                    <button onclick="handleAddCycle('${projectId}', '${iterationId}')"
-                            title="Add Cycle"
-                            style="padding: 8px 12px; border: none; border-radius: 6px; background: #2563eb; color: white; cursor: pointer; font-size: 1rem; transition: all 0.2s;">
-                        ➕
-                    </button>
-                    <button onclick="handleRenameCycle('${projectId}', '${iterationId}', '${iteration.currentCycle}')"
-                            title="Rename Cycle"
-                            style="padding: 8px 12px; border: none; border-radius: 6px; background: #6b7280; color: white; cursor: pointer; font-size: 1rem; transition: all 0.2s;">
-                        ✏️
-                    </button>
-                    <button onclick="handleDeleteCycle('${projectId}', '${iterationId}', '${iteration.currentCycle}')"
-                            title="Delete Cycle"
-                            style="padding: 8px 12px; border: none; border-radius: 6px; background: #dc2626; color: white; cursor: pointer; font-size: 1rem; transition: all 0.2s;">
-                        🗑️
-                    </button>
+                <div class="cycle-selector" style="background: white; border-radius: 8px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <label style="font-weight: 600; color: #1e293b; font-size: 0.9rem;">Cycle:</label>
+                        <select id="cycleSelect"
+                                onchange="handleCycleSwitch('${projectId}', '${iterationId}', this.value)"
+                                style="flex: 1; padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.9rem; background: white; cursor: pointer;">
+                            ${cycleOptions}
+                        </select>
+                        <button onclick="handleAddCycle('${projectId}', '${iterationId}')"
+                                title="Add Cycle"
+                                style="padding: 8px 12px; border: none; border-radius: 6px; background: #2563eb; color: white; cursor: pointer; font-size: 1rem; transition: all 0.2s;">
+                            ➕
+                        </button>
+                        <button onclick="handleRenameCycle('${projectId}', '${iterationId}', '${iteration.currentCycle}')"
+                                title="Rename Cycle"
+                                style="padding: 8px 12px; border: none; border-radius: 6px; background: #6b7280; color: white; cursor: pointer; font-size: 1rem; transition: all 0.2s;">
+                            ✏️
+                        </button>
+                        <button onclick="handleDeleteCycle('${projectId}', '${iterationId}', '${iteration.currentCycle}')"
+                                title="Delete Cycle"
+                                style="padding: 8px 12px; border: none; border-radius: 6px; background: #dc2626; color: white; cursor: pointer; font-size: 1rem; transition: all 0.2s;">
+                            🗑️
+                        </button>
+                    </div>
+                    ${currentCycle ? `
+                    <div style="background: #f8fafc; border-radius: 6px; padding: 10px; border-left: 4px solid ${statusBadgeColor};">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                            <span style="background: ${statusBadgeColor}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
+                                ${statusBadgeText}
+                            </span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.75rem; color: #64748b;">
+                            <div>
+                                <span style="font-weight: 600;">开始时间:</span> ${startedAt}
+                            </div>
+                            ${currentStatus === 'completed' ? `
+                            <div>
+                                <span style="font-weight: 600;">完成时间:</span> ${completedAt}
+                            </div>
+                            ` : ''}
+                        </div>
+                        ${durationText}
+                    </div>
+                    ` : ''}
                 </div>
             `;
         }
@@ -7962,6 +8066,73 @@
         }
 
         /**
+         * Auto-create new cycle when /speckit.specify is copied
+         * 自动创建新循环当 /speckit.specify 被复制时
+         */
+        function autoCreateCycleOnSpecify(projectId, iterationId) {
+            const project = projects.find(p => p.id === projectId);
+            if (!project) return;
+
+            const iteration = project.iterations.find(i => i.id === iterationId);
+            if (!iteration) return;
+
+            // Check if we need to create a new cycle
+            const currentCycleId = iteration.currentCycle;
+
+            // Case 1: Still in 'init' cycle, create first numbered cycle
+            if (currentCycleId === 'init') {
+                const newCycle = cycleManagementAdd(projectId, iterationId, '', true);
+                if (newCycle) {
+                    showToast(`🎯 新功能开发周期已启动: ${newCycle.name}`, 'success');
+                }
+                return;
+            }
+
+            // Case 2: Current cycle is completed, create new cycle
+            const currentCycle = iteration.cycles.find(c => c.id === currentCycleId);
+            if (currentCycle && currentCycle.status === 'completed') {
+                const newCycle = cycleManagementAdd(projectId, iterationId, '', true);
+                if (newCycle) {
+                    showToast(`♻️ 上一周期已结束，新周期已启动: ${newCycle.name}`, 'success');
+                }
+                return;
+            }
+
+            // Case 3: Current cycle is active, show warning
+            if (currentCycle && currentCycle.status === 'active') {
+                showToast('⚠️ 当前周期仍在进行中，请先完成 git merge', 'warning');
+            }
+        }
+
+        /**
+         * Complete current cycle when git merge is executed
+         * 完成当前循环当 git merge 被执行时
+         */
+        function completeCycleOnMerge(projectId, iterationId) {
+            const project = projects.find(p => p.id === projectId);
+            if (!project) return;
+
+            const iteration = project.iterations.find(i => i.id === iterationId);
+            if (!iteration) return;
+
+            const currentCycleId = iteration.currentCycle;
+
+            // Skip if in init cycle
+            if (currentCycleId === 'init') {
+                return;
+            }
+
+            // Find and complete current cycle
+            const currentCycle = iteration.cycles.find(c => c.id === currentCycleId);
+            if (currentCycle && currentCycle.status === 'active') {
+                currentCycle.status = 'completed';
+                currentCycle.completedAt = new Date().toISOString();
+                saveProjects();
+                showToast(`✅ 功能开发周期已完成: ${currentCycle.name}`, 'success');
+            }
+        }
+
+        /**
          * T035: Detect when Step IX (merge) is copied
          * T036-T038: Offer to auto-complete all steps
          * 检测步骤 IX 被复制，提供一键完成所有步骤选项
@@ -8058,7 +8229,7 @@
             
             navigator.clipboard.writeText(command).then(() => {
                 iteration.completedSteps[stepId] = true;
-                
+
                 // 记录完成时的循环颜色
                 const step = commandSteps.find(s => s.id === stepId);
                 if (step.phase === 'init') {
@@ -8070,8 +8241,15 @@
                 saveProjects();
                 renderProjectTree(); // T031: Real-time sidebar update when step completed
 
-                // T035: Detect Step IX copy (smart completion)
+                // FEATURE: Cycle lifecycle management
+                // Auto-create new cycle when /speckit.specify is copied
+                if (stepId === 'specify') {
+                    autoCreateCycleOnSpecify(projectId, iterationId);
+                }
+
+                // Complete current cycle and detect Step IX copy
                 if (stepId === 'merge') {
+                    completeCycleOnMerge(projectId, iterationId);
                     detectStepIXCopy(projectId, iterationId);
                 }
 
