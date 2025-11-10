@@ -4977,6 +4977,148 @@
             document.title = defaultTitle;
         }
 
+        // ============ URL 路由管理 ============
+
+        /**
+         * 从URL hash中解析项目状态
+         * @returns {Object} - {projectId: string|null, iterationId: string|null, tab: string|null}
+         */
+        function getProjectURLState() {
+            const hash = window.location.hash.slice(1); // 移除 '#'
+            if (!hash) {
+                return { projectId: null, iterationId: null, tab: null };
+            }
+
+            const parts = hash.split('/').filter(p => p);
+            const state = { projectId: null, iterationId: null, tab: null };
+
+            // 解析路由格式:
+            // #/project/PROJECT_ID
+            // #/project/PROJECT_ID/iteration/ITERATION_ID
+            // #/commands
+            // #/project-list
+
+            if (parts.length >= 2 && parts[0] === 'project') {
+                state.projectId = parts[1];
+
+                if (parts.length >= 4 && parts[2] === 'iteration') {
+                    state.iterationId = parts[3];
+                }
+            } else if (parts.length === 1) {
+                // 单独的tab名称
+                state.tab = parts[0];
+            }
+
+            return state;
+        }
+
+        /**
+         * 设置URL hash以反映当前项目状态
+         * @param {string|null} projectId - 项目ID
+         * @param {string|null} iterationId - 迭代ID (可选)
+         * @param {boolean} skipHashChange - 是否跳过触发hashchange事件 (用于避免循环)
+         */
+        function setProjectURL(projectId, iterationId = null, skipHashChange = false) {
+            let newHash = '';
+
+            if (projectId && iterationId) {
+                newHash = `#/project/${projectId}/iteration/${iterationId}`;
+            } else if (projectId) {
+                newHash = `#/project/${projectId}`;
+            } else {
+                newHash = ''; // 回到首页
+            }
+
+            // 如果URL没有变化，不做任何操作
+            if (window.location.hash === newHash) {
+                return;
+            }
+
+            // 设置标志以避免触发hashchange处理
+            if (skipHashChange) {
+                window._skipNextHashChange = true;
+            }
+
+            window.location.hash = newHash;
+        }
+
+        /**
+         * 处理URL hash变化，恢复对应的项目状态
+         */
+        function handleHashChange() {
+            // 如果是程序设置的hash变化，跳过处理
+            if (window._skipNextHashChange) {
+                window._skipNextHashChange = false;
+                return;
+            }
+
+            const state = getProjectURLState();
+
+            // 处理tab切换
+            if (state.tab) {
+                if (['project-list', 'project-content', 'commands'].includes(state.tab)) {
+                    switchTab(state.tab);
+                }
+                return;
+            }
+
+            // 处理项目/迭代选择
+            if (state.projectId) {
+                const project = projects.find(p => p.id === state.projectId);
+
+                if (!project) {
+                    console.warn(`项目未找到: ${state.projectId}`);
+                    showToast('⚠️ 项目未找到', 'warning');
+                    // 清除无效的URL
+                    window.location.hash = '';
+                    return;
+                }
+
+                if (state.iterationId) {
+                    const iteration = project.iterations.find(i => i.id === state.iterationId);
+
+                    if (!iteration) {
+                        console.warn(`迭代未找到: ${state.iterationId}`);
+                        showToast('⚠️ 迭代未找到', 'warning');
+                        // 回退到只显示项目
+                        selectProjectFromURL(state.projectId, null);
+                        return;
+                    }
+
+                    selectProjectFromURL(state.projectId, state.iterationId);
+                } else {
+                    selectProjectFromURL(state.projectId, null);
+                }
+            } else {
+                // 没有项目选中，清除选择
+                selectedProjectId = null;
+                selectedIterationId = null;
+                updatePageTitle();
+                renderProjectTree();
+                renderMainContent();
+                switchTab('project-list');
+            }
+        }
+
+        /**
+         * 从URL恢复项目选择（内部使用，不更新URL）
+         * @param {string} projectId - 项目ID
+         * @param {string|null} iterationId - 迭代ID
+         */
+        function selectProjectFromURL(projectId, iterationId) {
+            selectedProjectId = projectId;
+            selectedIterationId = iterationId;
+
+            if (projectId) {
+                expandedProjects.add(projectId);
+            }
+
+            updatePageTitle();
+            renderProjectTree();
+            renderMainContent();
+            switchTab('project-content');
+        }
+
         function selectProject(projectId) {
             selectedProjectId = projectId;
             selectedIterationId = null;
@@ -4985,6 +5127,8 @@
             renderMainContent();
             // Auto-switch to project content tab
             switchTab('project-content');
+            // 更新URL
+            setProjectURL(projectId, null, true);
         }
 
         function selectIteration(projectId, iterationId) {
@@ -4997,6 +5141,8 @@
             renderMainContent();
             // Auto-switch to project content tab
             switchTab('project-content');
+            // 更新URL
+            setProjectURL(projectId, iterationId, true);
         }
 
         // ============ 主内容区渲染 (T012) ============
@@ -5300,13 +5446,37 @@
             loadProjects();  // Load projects first
             loadCommands();  // Load commands library
 
-            // 默认展开第一个项目并选中第一个迭代
-            if (projects.length > 0) {
+            // 尝试从URL恢复状态
+            const urlState = getProjectURLState();
+            let stateRestored = false;
+
+            if (urlState.projectId) {
+                const project = projects.find(p => p.id === urlState.projectId);
+
+                if (project) {
+                    selectedProjectId = urlState.projectId;
+                    expandedProjects.add(urlState.projectId);
+
+                    if (urlState.iterationId) {
+                        const iteration = project.iterations.find(i => i.id === urlState.iterationId);
+                        if (iteration) {
+                            selectedIterationId = urlState.iterationId;
+                        }
+                    }
+
+                    stateRestored = true;
+                }
+            }
+
+            // 如果没有从URL恢复状态，使用默认行为
+            if (!stateRestored && projects.length > 0) {
                 selectedProjectId = projects[0].id;
                 expandedProjects.add(projects[0].id);
                 if (projects[0].iterations.length > 0) {
                     selectedIterationId = projects[0].iterations[0].id;
                 }
+                // 设置初始URL
+                setProjectURL(selectedProjectId, selectedIterationId, true);
             }
 
             // Update page title based on selected project
@@ -7335,6 +7505,9 @@
             selectedIterationId = project.iterations[0].id;
             expandedProjects.add(project.id);
 
+            // Update URL to reflect new project selection
+            setProjectURL(selectedProjectId, selectedIterationId, true);
+
             renderProjectTree();
             renderMainContent();
             showToast(`✅ 项目"${project.name}"已创建`, 'success');
@@ -7378,6 +7551,8 @@
                     selectedIterationId = null;
                 }
                 updatePageTitle();
+                // Update URL after reselecting
+                setProjectURL(selectedProjectId, selectedIterationId, true);
             }
 
             expandedProjects.delete(projectId);
@@ -7518,6 +7693,9 @@
             // Update UI
             renderProjectTree();
             renderMainContent();
+
+            // Update URL
+            setProjectURL(selectedProjectId, selectedIterationId, true);
 
             // Smooth scroll to main content area
             setTimeout(() => {
@@ -7872,6 +8050,9 @@
             selectedIterationId = iteration.id;
             expandedProjects.add(currentProjectId);
 
+            // Update URL to reflect new iteration selection
+            setProjectURL(selectedProjectId, selectedIterationId, true);
+
             renderProjectTree();
             renderMainContent();
             showToast(`✅ 迭代"${iteration.name}"已创建`, 'success');
@@ -7905,6 +8086,8 @@
             // 如果删除的是当前选中的迭代，选择第一个迭代
             if (selectedIterationId === iterationId) {
                 selectedIterationId = project.iterations[0]?.id || null;
+                // Update URL after reselecting
+                setProjectURL(selectedProjectId, selectedIterationId, true);
             }
 
             renderProjectTree();
@@ -8349,6 +8532,9 @@
             console.log('🔴 Gone offline');
             updateConnectionStatus();
         });
+
+        // Listen for URL hash changes (browser back/forward, manual URL edit)
+        window.addEventListener('hashchange', handleHashChange);
 
         // T055 [US3]: Window resize handler for layout stability
         let resizeTimeout;
