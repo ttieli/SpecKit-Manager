@@ -5795,9 +5795,9 @@
             // If user is authenticated, also save to Firebase
             if (currentUser && firebaseInitialized) {
                 try {
-                    const db = getDatabase();
-                    const commandsRef = ref(db, `users/${currentUser.uid}/commands`);
-                    await set(commandsRef, commands);
+                    const db = window.firebase.db; // Use already initialized database
+                    const commandsRef = window.firebase.ref(db, `users/${currentUser.uid}/commands`);
+                    await window.firebase.set(commandsRef, commands);
                     console.log('☁️ Commands synced to Firebase');
                 } catch (error) {
                     console.error('❌ Failed to sync commands to Firebase:', error);
